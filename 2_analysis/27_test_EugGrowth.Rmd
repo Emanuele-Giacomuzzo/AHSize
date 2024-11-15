@@ -1,0 +1,50 @@
+---
+title: "EugGrowth"
+author: "Emanuele Giacomuzzo"
+date: "2022-08-05"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+Euglena gracilis (Eug) is an important part of our system, as it allows the fixation of carbon into the meta-ecosystem and creates differences in resources between ecosystems with and without it. Because Euglena is so important in meta-ecosystem dynamics, we want it to grow to reasonable densities in our ecosystems. However, in our past experiment (PatchSize), Euglena grew only to low densities. We suspect that the falcon tubes were too opaque and that the foam board covered the cultures, causing Euglena to grow slowly and be overcompeted. Therefore, before performing this experiment (AHSize), we explored whether 45-ml cell flasks, 250-ml Schott bottles, or well plates would be a better alternative to 50-ml falcon tubes. First, we compared the growth of Euglena gracilis in bottles (100 ml ecosystems) and well plates (7.5 ml ecosystems) to tubes (7.5 and 37.5 ml ecosystems). Results (not displayed here) showed that well plates allowed Euglena to grow better. Second, we compared cell flasks to well plates (both had 7.5 ml ecosystems and six replicates). Videos were then analysed with the BEMOVI package set with a lower threshold of ImageJ of 30. 
+
+```{r}
+
+### --- IMPORT --- ###
+
+load(here("1_data", "tests", "EugGrowthTest", "t0.RData")); t0 = pop_output
+load(here("1_data", "tests", "EugGrowthTest", "t1.RData")); t1 = pop_output
+load(here("1_data", "tests", "EugGrowthTest", "t2.RData")); t2 = pop_output
+load(here("1_data", "tests", "EugGrowthTest", "t3.RData")); t3 = pop_output
+rm(pop_output)
+
+### --- TIDY --- ####
+
+t0_wells = t0 %>%
+  mutate(container = "well")
+t0_flasks = t0 %>%
+  mutate(container = "flask")
+t0 = rbind(t0_wells, t0_flasks)
+
+ds_eug = rbind(t0,t1,t2,t3); rm(t1,t2,t3)
+
+### --- PLOT --- ###
+
+ds_eug %>% 
+  ggplot(aes(x = day,
+             y = indiv_per_volume*1000,
+             group = interaction(day, container),
+             fill = container)) + 
+  geom_boxplot() +
+  labs(x = "Time (day)",
+       y = "Eug abundance (indiv/ml)",
+       fill = "") +
+  theme_bw() +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          legend.position = c(.2, .9),
+          legend.justification = c("right", "top"),
+          legend.box.just = "right",
+          legend.margin = margin(6, 6, 6, 6))
+```

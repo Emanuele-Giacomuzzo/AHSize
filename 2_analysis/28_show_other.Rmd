@@ -1,0 +1,86 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-10-21"
+editor_options: 
+  chunk_output_type: console
+---
+
+### Running time
+
+```{r running-time, echo = FALSE, eval = TRUE}
+end_time = Sys.time()
+end_time - start_time
+```
+
+### Presentation plots meta-ecosystems
+
+```{r child = here("2_r_files", "22_present_metaecos.Rmd")}
+```
+
+### Presentation plots AD ecosystems
+
+Create plots for presentations on how ecosystem biomass changed across connected and unconnected types. Start from plotting an empty figures and then show one line at the time.
+
+```{r}
+metaecosystem_type_selected = "AD"
+```
+
+```{r child = here("2_r_files", "23_present_ecos.Rmd")}
+```
+
+### Presentation plots HD ecosystems
+
+Create plots for presentations on how ecosystem evenness changed across connected and unconnected meta-ecosystem types. Start from plotting an empty figures and then show one line at the time.
+
+```{r}
+metaecosystem_type_selected = "HD"
+```
+
+```{r child = here("2_r_files", "23_present_ecos.Rmd")}
+```
+
+### Oven Test
+
+```{r child = here("2_r_files", "26_test_OvenTest.Rmd")}
+```
+
+### EugGrowth Test
+
+```{r child = here("2_r_files", "27_test_EugGrowth.Rmd")}
+```
+
+### Useful code
+
+If you want to change a certain part of the code using the following code in Unix:
+
+```{batch eval = FALSE}
+#Rmd script
+cd /Users/ema/Documents/GitHub/AHSize/r_files; sed -i '' 's/old_string/new_string/g' *.Rmd
+
+#R script
+cd /Users/ema/Documents/GitHub/AHSize/r_files/functions; sed -i '' 's/old_string/new_string/g' *.R
+```
+
+If you want to share a dataset and get a reproducible object, use the following R code:
+
+```{batch eval = FALSE}
+dput(data)
+```
+
+### Sampled rows
+
+This are 20 random columns of ds_metaecosystems that you can use to input into chatGPT to give it an idea of what the structure of your data is.
+
+```{r}
+ds_metaecosystems %>% 
+  sample_n(20, 
+           replace = FALSE) %>%
+  dput()
+```
+
+```{r echo=FALSE, message=FALSE}
+#Save environment
+save.image(file = here("3_results", "environments", "environment_at_the_of_knitting.RData"))
+```
+

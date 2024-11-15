@@ -1,0 +1,252 @@
+---
+title: "Find combinations of ecosystems"
+output: html_document
+date: "2023-05-02"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r identify-combinations-connected-ecos}
+
+# --- IDENTIFY ECOSYSTEM COMBINATIONS THAT CONSTITUTE CONNECTED META-ECOSYSTEMS --- #
+
+combinations_connected = ds_ecosystems %>%
+
+  filter(
+    
+         # To have the information about to which system nr and metaecosystem type 
+         # each ecosystem belongs, we select one of the time points to don't have 
+         # multiple information of the same ecosystem.
+         
+         time_point == 0,
+         
+         # To create only combinations for connected metaecosystems, 
+         # we filter the combinations of only connected ecosystems.
+         
+         connection == "connected") %>%
+  select(system_nr,
+         ecosystem_ID,
+         metaecosystem_type,
+         connection,
+         metaeco_type_n_connection) %>%
+  
+  # To know which ecosystems were combined to for the connected meta-ecosystem, 
+  # assign the ecosystem ID to the first and second ecosystems as mean ± 0.5. 
+  # This is because the two ecosystems of a meta-ecosystem are two integers 
+  # next to each other (e.g., 31 and 32). 
+  
+  group_by(system_nr,
+           metaecosystem_type,
+           connection,
+           metaeco_type_n_connection) %>%
+  summarise(ID_first_ecosystem = (mean(ecosystem_ID) - 0.5),
+            ID_second_ecosystem = (mean(ecosystem_ID) + 0.5)) %>%
+  mutate(ecosystems_combined = paste0(ID_first_ecosystem, 
+                                      "|", 
+                                      ID_second_ecosystem)) %>%
+  as.data.frame()
+```
+
+```{r identify-combinations-unconnected-ecos}
+
+# --- IDENTIFY THE COMBINATIONS OF ECOSYSTEMS THAT CONSTITUTE UNCONNECTED META-ECOSYSTEMS --- #
+
+# Determine ecosystems IDs of unconnected autotrophic ecosystems
+
+ID_unconnected_S_autotrophic = ds_ecosystems %>%
+  filter(ecosystem_type == "Small autotrophic unconnected") %>%
+  pull(ecosystem_ID) %>%
+  unique()
+
+ID_unconnected_M_autotrophic = ds_ecosystems %>%
+  filter(ecosystem_type == "Medium autotrophic unconnected") %>%
+  pull(ecosystem_ID) %>%
+  unique()
+
+ID_unconnected_L_autotrophic = ds_ecosystems %>%
+  filter(ecosystem_type == "Large autotrophic unconnected") %>%
+  pull(ecosystem_ID) %>%
+  unique()
+
+# Determine ecosystems IDs of unconnected heterotrophic ecosystems
+
+ID_unconnected_S_heterotrophic = ds_ecosystems %>%
+  filter(ecosystem_type == "Small heterotrophic unconnected") %>%
+  pull(ecosystem_ID) %>%
+  unique()
+
+ID_unconnected_M_heterotrophic = ds_ecosystems %>%
+  filter(ecosystem_type == "Medium heterotrophic unconnected") %>%
+  pull(ecosystem_ID) %>%
+  unique()
+
+ID_unconnected_L_heterotrophic = ds_ecosystems %>%
+  filter(ecosystem_type == "Large heterotrophic unconnected") %>%
+  pull(ecosystem_ID) %>%
+  unique()
+
+# Find combinations
+
+combinations_heterotrophic_dominated = crossing(ID_unconnected_L_heterotrophic,
+                                                ID_unconnected_S_autotrophic) %>%
+  mutate(metaecosystem_type = "HD",
+         connection = "unconnected") %>%
+  rename(ID_first_ecosystem = ID_unconnected_L_heterotrophic,
+         ID_second_ecosystem = ID_unconnected_S_autotrophic) %>%
+  select(metaecosystem_type,
+         connection,
+         ID_first_ecosystem,
+         ID_second_ecosystem)
+
+combinations_equally_dominated = crossing(ID_unconnected_M_heterotrophic,
+                                          ID_unconnected_M_autotrophic) %>%
+  mutate(metaecosystem_type = "ED",
+         connection = "unconnected") %>%
+  rename(ID_first_ecosystem = ID_unconnected_M_heterotrophic,
+         ID_second_ecosystem = ID_unconnected_M_autotrophic) %>%
+  select(metaecosystem_type,
+         connection,
+         ID_first_ecosystem,
+         ID_second_ecosystem)
+
+combinations_autotrophic_dominated = crossing(ID_unconnected_S_heterotrophic,
+                                              ID_unconnected_L_autotrophic) %>%
+  mutate(metaecosystem_type = "AD",
+         connection = "unconnected") %>%
+  rename(ID_first_ecosystem = ID_unconnected_S_heterotrophic,
+         ID_second_ecosystem = ID_unconnected_L_autotrophic) %>%
+  select(metaecosystem_type,
+         connection,
+         ID_first_ecosystem,
+         ID_second_ecosystem)
+
+# Bind combinations
+
+combinations_unconnected = rbind(combinations_autotrophic_dominated,
+                                 combinations_heterotrophic_dominated,
+                                 combinations_equally_dominated) %>%
+  
+  # To have a system nr for all the unconnected meta-ecosystems, give them a 
+  # nr that starts from 1000, so that they can be distinguished 
+  # from the connected meta-ecosystems. 
+  
+  mutate(system_nr = 1001:(1000 + nrow(.)),
+         connection = "unconnected",
+         metaeco_type_n_connection = paste(metaecosystem_type, connection),
+         ecosystems_combined = paste0(ID_first_ecosystem, "|", ID_second_ecosystem)) %>%
+  select(system_nr,
+         metaecosystem_type,
+         connection,
+         metaeco_type_n_connection,
+         ID_first_ecosystem,
+         ID_second_ecosystem,
+         ecosystems_combined)
+```
+
+```{r test-code-ds-metaecos-1, echo=FALSE}
+
+# --- TEST CODE --- #
+
+expect_equal(nrow(combinations_heterotrophic_dominated),
+             length(ID_unconnected_L_heterotrophic) * length(ID_unconnected_S_autotrophic))
+
+expect_equal(nrow(combinations_equally_dominated),
+             length(ID_unconnected_M_autotrophic) * length(ID_unconnected_M_heterotrophic))
+
+expect_equal(nrow(combinations_autotrophic_dominated),
+             length(ID_unconnected_L_autotrophic) * length(ID_unconnected_S_heterotrophic))
+
+expect_equal(nrow(combinations_unconnected),
+             nrow(combinations_autotrophic_dominated) + 
+             nrow(combinations_heterotrophic_dominated) + 
+             nrow(combinations_equally_dominated))
+```
+
+```{r join-combinations-connected-and-unconnected-ecos}
+
+# --- BIND CONNECTED AND UNCONNECTED META-ECOSYSTEM COMBINATIONS --- #
+
+ecosystem_combinations = rbind(combinations_connected,
+                               combinations_unconnected)
+```
+
+```{r test-code-ds-metaecos-2, echo=FALSE}
+
+# --- TEST CODE --- #
+
+expect_equal(nrow(ecosystem_combinations), 
+             nrow(combinations_unconnected) + nrow(combinations_connected))
+```
+
+```{r create-ds_metaecosystems}
+
+# --- USE ECOSYSTEM COMBINATIONS TO CREATE DS_METAECOSYSTEMS --- #
+
+# Set parameters
+
+row_i = 0
+
+# Create ds_metaecosystems
+
+for (combination in 1 : nrow(ecosystem_combinations)) {
+  
+  for (time_p in time_points) {
+    
+    # Set parameters
+    
+    row_i = row_i + 1
+    
+    # Create ds_metaecosystems row
+    
+    ds_metaecosystems[[row_i]] = ds_ecosystems %>%
+      filter(
+        ecosystem_ID %in% c(
+          ecosystem_combinations[combination, ]$ID_first_ecosystem,
+          ecosystem_combinations[combination, ]$ID_second_ecosystem),
+             time_point == time_p) %>%
+      
+      # Calculate meta-ecosystem metrics
+      
+      summarise(total_metaecosystem_bioarea_mm2 = sum(bioarea_tot_mm2)) %>%
+      mutate(time_point = time_p,
+             
+             # To know on which day the meta-ecosystem was sampled, select the 
+             # sampling day that is time_p + 1. This is because the first 
+             # sampling day is at time point 0, so all the days are shifted of 
+             # 1 on place (e.g., the sampling day of time point 1 is at 
+             # sampling_days[2]). 
+             
+             day = sampling_days[time_p + 1],
+             system_nr = ecosystem_combinations[combination, ]$system_nr,
+             ecosystems_combined = ecosystem_combinations[combination, ]$ecosystems_combined,
+             metaecosystem_type = ecosystem_combinations[combination, ]$metaecosystem_type,
+             connection = ecosystem_combinations[combination, ]$connection,
+             metaeco_type_n_connection = paste(metaecosystem_type, connection)) %>%
+      ungroup()
+  }
+}
+
+
+# Finish up ds_metaecosystems
+
+ds_metaecosystems = ds_metaecosystems %>%
+  bind_rows() %>%
+  as.data.frame() %>%
+  select(time_point,
+         day,
+         system_nr,
+         ecosystems_combined,
+         metaecosystem_type,
+         metaeco_type_n_connection,
+         connection,
+         total_metaecosystem_bioarea_mm2) %>%
+  filter(!system_nr %in% metaecosystems_to_take_off)
+```
+
+```{r test-code-ds-metaecos-3, echo=FALSE}
+
+# --- TEST CODE --- #
+
+expect_equal(nrow(ds_metaecosystems), 
+             length(time_points) * nrow(ecosystem_combinations))
+```

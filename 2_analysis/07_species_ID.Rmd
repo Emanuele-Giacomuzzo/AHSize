@@ -1,0 +1,150 @@
+---
+title: "Identify species"
+output: html_document
+date: "2024-02-29"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r create-training-dataset}
+
+# --- CREATE TRAINING DATASET --- #
+
+# Create a dataset excluding the species "Ble" for threshold 13. 
+# This is necessary because at threshold 13, we could not eliminate 
+# the food source (Chi) for "Ble".
+
+training_thresh_13 = read.csv(here("1_data",
+                                   "13_threshold_analysis_training.csv")) %>%
+  
+  # To make it easier to handle the level, transform Spi te into Spi_te. 
+  
+  mutate(species = case_when(species == "Spi te " ~ "Spi_te",
+                             TRUE ~ species)) %>%
+  
+  # To tidy up, reorder columns.
+  
+  select(file,
+         id,
+         species,
+         N_frames,
+         mean_area,
+         everything()) %>%
+  filter(species != "Ble")
+
+# Create a dataset including only the species "Ble" for threshold 40. 
+# At threshold 40, we successfully eliminated the food source (Chi) 
+# for "Ble", allowing for its inclusion in the analysis.
+
+training_thresh_40 = read.csv(here("1_data",
+                                   "40_threshold_analysis_training.csv")) %>%
+  
+  # To tidy up, reorder columns.
+  
+  select(file,
+         id,
+         species,
+         N_frames,
+         mean_area,
+         everything()) %>%
+  filter(species == "Ble")
+
+# Bind the two previous datasets
+
+training_individuals = rbind(training_thresh_13,
+                             training_thresh_40)
+```
+
+```{r}
+
+# --- CREATE PREDICTIVE MODEL --- #
+# See where we previously set the parameters for a description of these variables. 
+
+species_ID_model = svm(factor(species) ~
+                         mean_grey +
+                         sd_grey +
+                         mean_area +
+                         sd_area +
+                         mean_perimeter +
+                         mean_turning +
+                         sd_turning +
+                         sd_perimeter +
+                         mean_major +
+                         sd_major +
+                         mean_minor +
+                         sd_minor +
+                         mean_ar +
+                         sd_ar +
+                         duration +
+                         max_net  +
+                         net_disp +
+                         net_speed +
+                         gross_disp +
+                         max_step +
+                         min_step +
+                         sd_step +
+                         sd_gross_speed +
+                         max_gross_speed +
+                         min_gross_speed ,
+                       data = training_individuals,
+                       probability = T,
+                       na.action = na.pass)
+```
+
+```{r show-confusion-matrix}
+
+# --- SHOW CONFUSION MATRIX --- #
+
+# Create a confusion matrix comparing the fitted species predictions from the 
+# SVM model with the actual species labels from the training dataset.
+
+confusion_matrix = table(species_ID_model$fitted, training_individuals$species)
+
+# Create a copy of the confusion matrix to modify for error calculation.
+
+confusion_matrix_with_diagonal_zeros = confusion_matrix
+
+# Set the diagonal elements (true positives) to zero for error calculation.
+# This allows us to compute the misclassification errors without counting the 
+# correct classifications.
+
+diag(confusion_matrix_with_diagonal_zeros) = 0 
+
+# Calculate the class error for each species.
+# Class error is defined as the ratio of misclassified samples to the total 
+# samples for each species.
+
+confusion_matrix = cbind(
+  confusion_matrix,
+  class_error = rowSums(confusion_matrix_with_diagonal_zeros) / 
+                rowSums(confusion_matrix)) %>%
+  as.data.frame() %>%
+  mutate(class_error_percentage = class_error * 100,
+         class_error = NULL)
+
+# Display the final confusion matrix with class errors as a data frame.
+
+confusion_matrix
+```
+
+```{r perform-species-identification}
+
+# --- ID SPECIES --- #
+
+species_vector = ds_individuals %>%
+  select(trophic_type, mean_grey:min_gross_speed) %>%
+  mutate(species = as.character(predict(object = species_ID_model,
+                                        .,
+                                        type = "response")),
+         
+         # Given that autotrophic ecosystems are exclusively composed of 
+         # Euglena gracilis (Eug), we can simply designate Eug as the species 
+         # for each individual in autotrophic ecosystems.
+         
+         species = ifelse(trophic_type == "autotrophic",
+                          "Eug",
+                          species)) %>%
+  select(species)
+
+ds_individuals = cbind(ds_individuals, species_vector)
+```

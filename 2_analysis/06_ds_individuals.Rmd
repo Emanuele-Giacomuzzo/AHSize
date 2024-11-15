@@ -1,0 +1,165 @@
+---
+title: "Biomass of meta-ecosystems"
+output: html_document
+date: "2022-11-08"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r create-ds-individuals}
+
+# --- IMPORT DATASETS --- #
+
+# Loop through time points to import them and modify them
+
+for(time_point in time_points){
+  
+  # Note: We use time_point + 1 for 1-based indexing in R.
+  
+  ds_individuals[[time_point + 1]] = read.csv(here("1_data",
+                                                   paste0(
+                                                     "13_threshold_analysis_t", 
+                                                     time_point, 
+                                                     ".csv"))) %>%
+    
+    mutate(comment = NULL,
+           
+           # To remember that some videos are replicates of the same ecosystem 
+           # at a time point, introduce the column video_replicate. For all time 
+           # points other than time point 0, it should be 1, as at each time 
+           # point only a single video has been taken for each ecosystem. For 
+           # time point 0, assign the value of file, which is the number of 
+           # video that had been taken.
+           
+           video_replicate = ifelse(time_point > 0,
+                                    yes = as.character(1),
+                                    no = as.character(file)),
+           
+           # To know which ecosystem was filmed, assign to ecosystem ID the 
+           # value of file, as ecosystems were filmed in numerical order. 
+           # Assign NA to videos at time point 0 because we filmed the master 
+           # bottles of autotrophic and heterotrophic ecosystems and not the 
+           # single ecosystems. 
+           
+           ecosystem_ID = ifelse(time_point > 0,
+                                 yes = as.character(file),
+                                 no = as.character(NA)),
+           
+           # Derive biomass information
+           
+           bioarea_µm2 = mean_area,
+           bioarea_mm2 = bioarea_µm2 * 10^-6,
+           bioarea_mm2_per_ml = bioarea_mm2 / volume_recorded_ml,
+           bioarea_mm2_per_frame_per_ml = bioarea_mm2_per_ml * N_frames / 
+                                          total_frames) %>%
+    
+    # To tidy up, reorder columns. 
+    
+    select(time_point, 
+           day, 
+           video_replicate, 
+           file, 
+           id, 
+           everything())
+}
+```
+
+```{r}
+
+# --- EXTEND T0 --- #
+
+# Assign to every ecosystem the videos of its trophic type at time point 0.
+
+for(ID in 1:n_ecosystems){
+  
+  ds_individuals_t0_extending[[ID]] = ds_individuals[[1]] %>%
+    
+    # To allocate the autotrophic videos to autotrophic ecosystems and the 
+    # heterotrophic videos to heterotrophic ecosystems, choose autotrophic 
+    # videos for autotrophic ecosystems and heterotrophic videos for 
+    # heterotrophic ecosystems.
+    
+    filter(
+      (ID %in% ecosystem_IDs_autotrophic & trophic_type == "autotrophic") |
+      (ID %in% ecosystem_IDs_heterotrophic & trophic_type == "heterotrophic")) %>%
+    
+    # To have more informative columns, manipulate them.
+    
+    mutate(file =  as.character(str_extract(file, "\\d+")),
+           ecosystem_ID = as.character(ID),
+    
+    # To know that different individuals belong to different videos, add the 
+    # column video replicates. The autotrophic videos start from video 1. 
+    # The heterotrophic videos start from video 7. 
+    
+    video_replicate = as.character(file)) %>%
+    
+    # To tidy up, reorder columns.
+    
+    select(time_point, 
+           day, 
+           ecosystem_ID, 
+           video_replicate, 
+           file, 
+           id, 
+           everything())
+}
+```
+
+```{r}
+
+# --- BIND EVERYTHING TOGETHER --- #
+
+ds_individuals[[1]] = ds_individuals_t0_extending %>%
+  bind_rows()
+
+ds_individuals = ds_individuals %>%
+  bind_rows()
+```
+
+```{r}
+
+# --- FINISH UP DS_INDIVIDUALS --- #
+
+ds_individuals = ds_individuals %>%
+  mutate(
+    
+    # To avoid that trophic_type gives problems when combining ds_individuals with 
+    # ecosystem_info, get rid of it, as it had the right value only at time 
+    # point 0. 
+  
+    trophic_type = NULL,
+    
+    # To better work with ecosystem_ID, video_replicate, and file columns, 
+    # transform them into a double format. 
+    
+    ecosystem_ID = as.double(str_extract(ecosystem_ID, "\\d+")),
+    video_replicate = as.double(str_extract(video_replicate, "\\d+")),
+    file = as.double(str_extract(file, "\\d+"))) %>%
+  
+  # To have all the information on the ecosystems that were not in the original 
+  # data, bind 'ds_individuals' with 'ecosystem_info'.
+  
+  left_join(ecosystem_info,
+            by = "ecosystem_ID") %>%
+  
+  # To tidy up, reorder columns. 
+  
+  select(time_point,
+         day,
+         video_replicate,
+         ecosystem_ID,
+         system_nr,
+         ecosystem_type,
+         ecosystem_size,
+         ecosystem_size_ml,
+         trophic_type,
+         ecosystem_size_and_trophy,
+         metaecosystem_type,
+         connection,
+         metaeco_type_n_connection,
+         bioarea_mm2,
+         bioarea_mm2_per_frame_per_ml,
+         N_frames,
+         all_of(columns_for_species_ID))
+```

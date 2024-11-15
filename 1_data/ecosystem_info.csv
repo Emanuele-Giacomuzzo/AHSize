@@ -1,0 +1,61 @@
+culture_ID,system_nr,treatment_replicate,patch_size,patch_size_ml,trophic_type,metaecosystem,metaecosystem_type,eco_metaeco_type
+1,1,1,S,7.5,autotrophic,no,,Sa
+2,2,2,S,7.5,autotrophic,no,,Sa
+3,3,3,S,7.5,autotrophic,no,,Sa
+4,4,4,S,7.5,autotrophic,no,,Sa
+5,5,5,S,7.5,autotrophic,no,,Sa
+6,6,1,S,7.5,heterotrophic,no,,Sh
+7,7,2,S,7.5,heterotrophic,no,,Sh
+8,8,3,S,7.5,heterotrophic,no,,Sh
+9,9,4,S,7.5,heterotrophic,no,,Sh
+10,10,5,S,7.5,heterotrophic,no,,Sh
+11,11,1,M,22.5,autotrophic,no,,Ma
+12,12,2,M,22.5,autotrophic,no,,Ma
+13,13,3,M,22.5,autotrophic,no,,Ma
+14,14,4,M,22.5,autotrophic,no,,Ma
+15,15,5,M,22.5,autotrophic,no,,Ma
+16,16,1,M,22.5,heterotrophic,no,,Mh
+17,17,2,M,22.5,heterotrophic,no,,Mh
+18,18,3,M,22.5,heterotrophic,no,,Mh
+19,19,4,M,22.5,heterotrophic,no,,Mh
+20,20,5,M,22.5,heterotrophic,no,,Mh
+21,21,1,L,37.5,autotrophic,no,,La
+22,22,2,L,37.5,autotrophic,no,,La
+23,23,3,L,37.5,autotrophic,no,,La
+24,24,4,L,37.5,autotrophic,no,,La
+25,25,5,L,37.5,autotrophic,no,,La
+26,26,1,L,37.5,heterotrophic,no,,Lh
+27,27,2,L,37.5,heterotrophic,no,,Lh
+28,28,3,L,37.5,heterotrophic,no,,Lh
+29,29,4,L,37.5,heterotrophic,no,,Lh
+30,30,5,L,37.5,heterotrophic,no,,Lh
+31,31,1,M,22.5,autotrophic,yes,Ma_Mh,Ma (Ma_Mh)
+32,31,1,M,22.5,heterotrophic,yes,Ma_Mh,Mh (Ma_Mh)
+33,32,2,M,22.5,autotrophic,yes,Ma_Mh,Ma (Ma_Mh)
+34,32,2,M,22.5,heterotrophic,yes,Ma_Mh,Mh (Ma_Mh)
+35,33,3,M,22.5,autotrophic,yes,Ma_Mh,Ma (Ma_Mh)
+36,33,3,M,22.5,heterotrophic,yes,Ma_Mh,Mh (Ma_Mh)
+37,34,4,M,22.5,autotrophic,yes,Ma_Mh,Ma (Ma_Mh)
+38,34,4,M,22.5,heterotrophic,yes,Ma_Mh,Mh (Ma_Mh)
+39,35,5,M,22.5,autotrophic,yes,Ma_Mh,Ma (Ma_Mh)
+40,35,5,M,22.5,heterotrophic,yes,Ma_Mh,Mh (Ma_Mh)
+41,36,1,S,7.5,autotrophic,yes,Sa_Lh,Sa (Sa_Lh)
+42,36,1,L,37.5,heterotrophic,yes,Sa_Lh,Lh (Sa_Lh)
+43,37,2,S,7.5,autotrophic,yes,Sa_Lh,Sa (Sa_Lh)
+44,37,2,L,37.5,heterotrophic,yes,Sa_Lh,Lh (Sa_Lh)
+45,38,3,S,7.5,autotrophic,yes,Sa_Lh,Sa (Sa_Lh)
+46,38,3,L,37.5,heterotrophic,yes,Sa_Lh,Lh (Sa_Lh)
+47,39,4,S,7.5,autotrophic,yes,Sa_Lh,Sa (Sa_Lh)
+48,39,4,L,37.5,heterotrophic,yes,Sa_Lh,Lh (Sa_Lh)
+49,40,5,S,7.5,autotrophic,yes,Sa_Lh,Sa (Sa_Lh)
+50,40,5,L,37.5,heterotrophic,yes,Sa_Lh,Lh (Sa_Lh)
+51,41,1,S,7.5,heterotrophic,yes,Sh_La,Sh (Sh_La)
+52,41,1,L,37.5,autotrophic,yes,Sh_La,La (Sh_La)
+53,42,2,S,7.5,heterotrophic,yes,Sh_La,Sh (Sh_La)
+54,42,2,L,37.5,autotrophic,yes,Sh_La,La (Sh_La)
+55,43,3,S,7.5,heterotrophic,yes,Sh_La,Sh (Sh_La)
+56,43,3,L,37.5,autotrophic,yes,Sh_La,La (Sh_La)
+57,44,4,S,7.5,heterotrophic,yes,Sh_La,Sh (Sh_La)
+58,44,4,L,37.5,autotrophic,yes,Sh_La,La (Sh_La)
+59,45,5,S,7.5,heterotrophic,yes,Sh_La,Sh (Sh_La)
+60,45,5,L,37.5,autotrophic,yes,Sh_La,La (Sh_La)
