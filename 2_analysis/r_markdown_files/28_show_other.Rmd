@@ -1,0 +1,58 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-10-21"
+editor_options: 
+  chunk_output_type: console
+---
+
+### R and package versions
+
+```{r}
+sessionInfo()
+```
+
+### Running time
+
+```{r running-time, echo = FALSE, eval = TRUE}
+end_time = Sys.time()
+end_time - start_time
+```
+
+### Useful code
+
+If you want to change a certain part of the code using the following code in Unix:
+
+```{batch eval = FALSE}
+#Rmd script
+cd /Users/ema/Documents/GitHub/AHSize/r_files; sed -i '' 's/old_string/new_string/g' *.Rmd
+
+#R script
+cd /Users/ema/Documents/GitHub/AHSize/r_files/functions; sed -i '' 's/old_string/new_string/g' *.R
+```
+
+If you want to share a dataset and get a reproducible object, use the following R code:
+
+```{batch eval = FALSE}
+dput(data)
+```
+
+### Sampled rows
+
+This are 20 random columns of ds_metaecosystems that you can use to input into chatGPT to give it an idea of what the structure of your data is.
+
+```{r}
+ds_metaecosystems %>% 
+  sample_n(20, 
+           replace = FALSE) %>%
+  dput()
+```
+
+```{r echo=FALSE, message=FALSE}
+#Save environment
+save.image(file = here("..",
+                       "3_results", 
+                       "environments", 
+                       "environment_at_the_of_knitting.RData"))
+```
+

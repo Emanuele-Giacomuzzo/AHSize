@@ -1,0 +1,160 @@
+---
+title: "Create the Dataset with Ecosystems"
+output: html_document
+date: "2024-02-29"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r summarise-ecosystem-level-metrics}
+
+# --- SUMMARISE ECOSYSTEM-LEVEL METRICS --- #
+
+ds_ecosystems = ds_individuals %>%
+  
+  #Summarise for each species their bioarea and nr of individuals
+
+  group_by_at(vars(time_point:metaeco_type_n_connection,
+                   species)) %>%
+  summarise(bioarea_mm2_per_ml = sum(bioarea_mm2_per_frame_per_ml),
+            indiv_per_ml = sum(N_frames) / total_frames,
+            median_body_size_mm2 = median(bioarea_mm2),
+            median_body_size_µm2 = median_body_size_mm2 * 10^6) %>%
+  
+  # Go from long to wide format
+
+  pivot_wider(names_from = species,
+              values_from = c(bioarea_mm2_per_ml, 
+                              indiv_per_ml)) %>%
+  
+  # Rename the resulting columns for clarity
+  
+  rename(Ble_indiv_per_ml = indiv_per_ml_Ble,
+         Cep_indiv_per_ml = indiv_per_ml_Cep,
+         Col_indiv_per_ml = indiv_per_ml_Col,
+         Eug_indiv_per_ml = indiv_per_ml_Eug,
+         Eup_indiv_per_ml = indiv_per_ml_Eup,
+         Lox_indiv_per_ml = indiv_per_ml_Lox,
+         Pau_indiv_per_ml = indiv_per_ml_Pau,
+         Pca_indiv_per_ml = indiv_per_ml_Pca,
+         Spi_indiv_per_ml = indiv_per_ml_Spi,
+         Spi_te_indiv_per_ml = indiv_per_ml_Spi_te,
+         Tet_indiv_per_ml = indiv_per_ml_Tet,
+         Ble_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Ble,
+         Cep_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Cep,
+         Col_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Col,
+         Eug_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Eug,
+         Eup_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Eup,
+         Lox_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Lox,
+         Pau_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Pau,
+         Pca_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Pca,
+         Spi_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Spi,
+         Spi_te_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Spi_te,
+         Tet_bioarea_mm2_per_ml = bioarea_mm2_per_ml_Tet) %>%
+  
+  # Average across videos and calculate metrics. Do that to have a single 
+  # value at time point 0.
+  
+  group_by_at(vars(time_point:metaeco_type_n_connection)) %>%
+  summarise(across(contains("bioarea_mm2_per_ml"), 
+                   sum, 
+                   na.rm = TRUE),
+            across(contains("indiv_per_ml"), 
+                    sum, 
+                   na.rm = TRUE),
+            median_body_size_µm2 = mean(median_body_size_µm2)) %>%
+  
+  # Calculate ecosystem-level metrics
+  
+  mutate(
+    
+         # Calculate biomass and individuals of ecosystems.  
+    
+         bioarea_mm2_per_ml = sum(across(contains("bioarea_mm2_per_ml"))),
+         bioarea_tot_mm2 = bioarea_mm2_per_ml * ecosystem_size_ml,
+         indiv_per_ml = sum(across(contains("indiv_per_ml"))),
+         
+         # Transform species densities from NA to 0
+         
+         across(all_of(protist_species_indiv_per_ml), ~ replace_na(., 0)),
+         across(all_of(protist_species_bioarea_mm2_per_ml), ~ replace_na(., 0)),
+         
+         # Calculate biodiversity of ecosystems
+
+         species_richness = specnumber(across(ends_with("_indiv_per_ml"))),
+         shannon = diversity(across(ends_with("_bioarea_mm2_per_ml")),
+                             index = "shannon"),
+         shannon = ifelse(species_richness == 0,
+                          yes = NA,
+                          no = shannon),
+         evenness_pielou = shannon / log(species_richness),
+         
+         # Calculate species dominance
+         
+         across(all_of(protist_species_indiv_per_ml), 
+                ~ (.x / indiv_per_ml) * 100, 
+                .names = "{.col}_dominance"),
+         across(all_of(protist_species_bioarea_mm2_per_ml), 
+                ~ (.x / indiv_per_ml) * 100, 
+                .names = "{.col}_dominance"),
+         
+         # Do transformations
+         
+         log10_bioarea_mm2_per_ml = log10(bioarea_mm2_per_ml),
+         ln_bioarea_mm2_per_ml = log(bioarea_mm2_per_ml),
+         sqrt_bioarea_mm2_per_ml = sqrt(bioarea_mm2_per_ml),
+         cbrt_bioarea_mm2_per_ml = bioarea_mm2_per_ml^(1/3),
+         sqr_bioarea_mm2_per_ml = bioarea_mm2_per_ml^(2)) %>%
+  
+  # To have a single value for each ecosystem at a time point, average video replicates.
+  
+  group_by(across(all_of(c("time_point", 
+                           "day",
+                           "system_nr",
+                           "ecosystem_ID",
+                           "metaecosystem_type",
+                           "ecosystem_type",
+                           "ecosystem_size",
+                           "ecosystem_size_ml",
+                           "trophic_type",
+                           "ecosystem_size_and_trophy",
+                           "connection",
+                           "metaeco_type_n_connection")))) %>%
+  summarise(across(contains("_per_ml"), mean),
+            across(contains("tot"), mean),
+            species_richness = mean(species_richness),
+            shannon = mean(shannon),
+            evenness_pielou = mean(evenness_pielou),
+            median_body_size_µm2 = mean(median_body_size_µm2)) %>%
+  ungroup() %>%
+
+  # To tidy up, select useful columns.  
+
+  select(time_point, 
+         day, 
+         system_nr, 
+         ecosystem_ID, 
+         metaecosystem_type, 
+         metaeco_type_n_connection,
+         ecosystem_type, 
+         ecosystem_size, 
+         ecosystem_size_ml,
+         trophic_type, 
+         connection,
+         ecosystem_size_and_trophy,
+         bioarea_mm2_per_ml,
+         log10_bioarea_mm2_per_ml,
+         ln_bioarea_mm2_per_ml,
+         sqrt_bioarea_mm2_per_ml,
+         cbrt_bioarea_mm2_per_ml,
+         sqr_bioarea_mm2_per_ml,
+         bioarea_tot_mm2,
+         indiv_per_ml,
+         species_richness,
+         shannon,
+         evenness_pielou,
+         median_body_size_µm2,
+         any_of(protist_species_bioarea_mm2_per_ml),
+         any_of(protist_species_indiv_per_ml),
+         any_of(protist_species_dominance))
+```

@@ -1,0 +1,523 @@
+---
+title: "Parameters"
+output: html_document
+date: "2023-02-12"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r general-parameters}
+
+# --- SET PARAMETERS FOR R MARKDOWN AND THE GENERAL RUNNING OF THE CODE --- #
+
+set.seed(420)
+knitr::opts_chunk$set(message = FALSE,
+                      cache = FALSE,
+                      autodep = FALSE)
+start_time = Sys.time()
+recompute_lengthy_analyses = FALSE
+```
+
+```{r bemovi-parameters}
+
+# --- SET PARAMETERS NECESSARY TO USE THE PACKAGE BEMOVI (INCLUDES SAMPLING PARAMETERS) --- #
+
+# Define time points and associated sampling days
+
+time_points = 0:4
+time_points_for_ES = 1:4 #Time points for which the effect size was calculated
+sampling_days = c(0, 5, 12, 19, 26) 
+
+# Define parameters used for analysing the videos in the package BEMOVI
+
+fps = 25  # Frames per second (frame rate of the video)
+seconds_per_video = 5  # Duration of each video in seconds
+total_frames = fps * seconds_per_video  # Total number of frames in each video
+measured_volume = 34.4  # Volume measured for each video in microliters (µL)
+volume_recorded_μl = measured_volume  # Storing the measured volume in µL
+volume_recorded_ml = volume_recorded_μl * 10**-3  # Converting the volume from µL to milliliters (mL)
+pixel_to_scale = 4.05  # Conversion factor for pixels to µm
+filter_min_net_disp = 25  # Minimum net displacement for an object to be considered a protist (pixels)
+filter_min_duration = 1  # Minimum duration an object must be tracked to be considered a protist (seconds)
+filter_detection_freq = 0.1  # Minimum frequency of detection in the video for an object to be considered a protist (detected frames / total frames)
+filter_median_step_length = 3  # Minimum step length for an object to be considered a protist (pixels)
+threshold_levels = c(13, 40) # Two lower pixel intensity thresholds for ImageJ to distinguish background from protists (higher threshold used for Ble)
+video.description.folder = "0_video_description/" # Folder where the video descriptions (metadata about each video) are stored
+video.description.file = "video_description.txt" # Filename of the text file containing the description of each video
+merged_data_folder = "5_merged_data/" # Folder where the merged data files from the analysis will be stored
+
+# Define columns that will be used for identifying species based on their movement and morphological characteristics
+
+columns_for_species_ID = c(
+  "mean_grey",         # Mean grayscale value (intensity) of the detected protist (brightness)
+  "sd_grey",           # Standard deviation of the grayscale values (intensity variation)
+  "mean_area",         # Mean area (in pixels) of the detected protist
+  "sd_area",           # Standard deviation of the protist's area
+  "mean_perimeter",    # Mean perimeter (length around the protist) of the detected protist
+  "mean_turning",      # Mean turning angle of the protist's trajectory (how much the protist changes direction)
+  "sd_turning",        # Standard deviation of the turning angles (variability in direction change)
+  "sd_perimeter",      # Standard deviation of the protist's perimeter
+  "mean_major",        # Mean length of the major axis of the protist (longest dimension)
+  "sd_major",          # Standard deviation of the major axis length
+  "mean_minor",        # Mean length of the minor axis of the protist (shortest dimension)
+  "sd_minor",          # Standard deviation of the minor axis length
+  "mean_ar",           # Mean aspect ratio (ratio of major to minor axis length)
+  "sd_ar",             # Standard deviation of the aspect ratio
+  "duration",          # Duration of time the protist is tracked in the video
+  "max_net",           # Maximum net displacement (greatest straight-line distance traveled)
+  "net_disp",          # Total net displacement (total straight-line distance from start to end of the trajectory)
+  "net_speed",         # Mean net speed (speed based on net displacement)
+  "gross_disp",        # Total gross displacement (total distance traveled including all movement)
+  "max_step",          # Maximum step length (largest distance moved between two consecutive frames)
+  "min_step",          # Minimum step length (smallest distance moved between two consecutive frames)
+  "sd_step",           # Standard deviation of the step lengths (variability in frame-to-frame movement)
+  "sd_gross_speed",    # Standard deviation of gross speed (variability in speed over time)
+  "max_gross_speed",   # Maximum gross speed (highest speed achieved)
+  "min_gross_speed")    # Minimum gross speed (lowest speed detected)
+```
+
+```{r resource-flow-parameters}
+
+# --- SET PARAMETERS RELATED TO RESOURCE FLOWS --- #
+
+resource_flow_days = c(7, 14, 21) 
+```
+
+```{r protists-parameters}
+
+# --- SET PARAMETERS RELATED TO PROTISTS --- #
+
+protist_species = c("Ble", 
+                    "Cep", 
+                    "Col", 
+                    "Eug", 
+                    "Eup", 
+                    "Lox", 
+                    "Pau", 
+                    "Pca", 
+                    "Spi", 
+                    "Spi_te", 
+                    "Tet")
+protist_species_indiv_per_ml = paste0(protist_species, "_indiv_per_ml")
+protist_species_bioarea_mm2_per_ml = paste0(protist_species, "_bioarea_mm2_per_ml")
+protist_species_dominance = paste0(protist_species_bioarea_mm2_per_ml, "_dominance")
+```
+
+```{r individuals-parameters}
+
+# --- SET PARAMETERS RELATED TO INDIVIDUALS --- #
+
+# Initialise the dataset "ds_individuals"
+
+ds_individuals = list()
+ds_individuals_t0_extending = list()
+```
+
+```{r ecosystems-parameters}
+
+# --- SET PARAMETERS RELATED TO ECOSYSTEMS --- #
+
+# Import the information about ecosystems
+
+ecosystem_info = read.csv(here("..",
+                               "1_data", 
+                               "ecosystem_info.csv"), header = TRUE) %>%
+  rename(ecosystem_ID = culture_ID,
+         ecosystem_type = eco_metaeco_type,
+         ecosystem_size = patch_size,
+         ecosystem_size_ml = patch_size_ml) %>%
+  
+  mutate(
+
+    # To have levels that are easier to read, transform them. 
+    
+    ecosystem_type = case_when(
+           ecosystem_type == "Sa" ~ "Small autotrophic unconnected",
+           ecosystem_type == "Sh" ~ "Small heterotrophic unconnected",
+           ecosystem_type == "Ma" ~ "Medium autotrophic unconnected",
+           ecosystem_type == "Mh" ~ "Medium heterotrophic unconnected",
+           ecosystem_type == "La" ~ "Large autotrophic unconnected",
+           ecosystem_type == "Lh" ~ "Large heterotrophic unconnected",
+           ecosystem_type == "Sa (Sa_Lh)" ~ "Small autotrophic connected",
+           ecosystem_type == "Sh (Sh_La)" ~ "Small heterotrophic connected",
+           ecosystem_type == "Ma (Ma_Mh)" ~ "Medium autotrophic connected",
+           ecosystem_type == "Mh (Ma_Mh)" ~ "Medium heterotrophic connected",
+           ecosystem_type == "La (Sh_La)" ~ "Large autotrophic connected",
+           ecosystem_type == "Lh (Sa_Lh)" ~ "Large heterotrophic connected",
+           TRUE ~ ecosystem_type), 
+    ecosystem_type = factor(
+           ecosystem_type,
+           levels = c("Small heterotrophic unconnected",
+                      "Small heterotrophic connected",
+                      "Small autotrophic unconnected",
+                      "Small autotrophic connected",
+                      "Medium heterotrophic unconnected",
+                      "Medium heterotrophic connected",
+                      "Medium autotrophic unconnected",
+                      "Medium autotrophic connected",
+                      "Large heterotrophic unconnected",
+                      "Large heterotrophic connected",
+                      "Large autotrophic unconnected",
+                      "Large autotrophic connected")), 
+    ecosystem_size = case_when(
+           ecosystem_size == "S" ~ "Small",
+           ecosystem_size == "M" ~ "Medium",
+           ecosystem_size == "L" ~ "Large",
+           TRUE ~ ecosystem_size),
+    ecosystem_size_and_trophy = factor(
+      x = paste(ecosystem_size, trophic_type),
+      levels = c("Small autotrophic",
+                 "Medium autotrophic",
+                 "Large autotrophic",
+                 "Small heterotrophic",
+                 "Medium heterotrophic",
+                 "Large heterotrophic")),
+    connection = factor(
+      x = ifelse(metaecosystem == "yes",
+                 "connected",
+                 "unconnected"),
+      levels = c("unconnected",
+                 "connected")),
+    metaecosystem = NULL,
+    metaecosystem_type = case_when(
+           ecosystem_size_and_trophy == "Large heterotrophic" ~ "HD",
+           ecosystem_size_and_trophy == "Small autotrophic" ~ "HD",
+           ecosystem_size_and_trophy == "Large autotrophic" ~ "AD",
+           ecosystem_size_and_trophy == "Small heterotrophic" ~ "AD",
+           ecosystem_size_and_trophy == "Medium autotrophic" ~ "ED",
+           ecosystem_size_and_trophy == "Medium heterotrophic" ~ "ED",
+           TRUE ~ metaecosystem_type),
+    metaecosystem_type = factor(metaecosystem_type,
+                                levels = c("AD",
+                                           "ED", 
+                                           "HD")),
+    metaeco_type_n_connection = if_else(
+      !is.na(metaecosystem_type),  # Check if metaecosystem_type is not NA
+      paste(metaecosystem_type, connection),  # Combine if not NA
+      NA))  # Return NA if metaecosystem_type is NA
+
+# Initialise the dataset "ds_ecosystems_effect_size"
+
+ds_ecosystems_effect_size = list()
+
+# Define ecosystems to take off because of problems in the experiment
+
+ecosystems_to_take_off = NULL
+
+# Define the variables you want to calculate for each ecosystem
+
+variables_ecosystems = c("bioarea_mm2_per_ml",
+                         "log10_bioarea_mm2_per_ml",
+                         "ln_bioarea_mm2_per_ml",
+                         "sqrt_bioarea_mm2_per_ml",
+                         "cbrt_bioarea_mm2_per_ml",
+                         "sqr_bioarea_mm2_per_ml",
+                         "bioarea_tot_mm2",
+                         "indiv_per_ml",
+                         "species_richness",
+                         "shannon",
+                         "evenness_pielou",
+                         protist_species_indiv_per_ml,
+                         protist_species_bioarea_mm2_per_ml,
+                         protist_species_dominance,
+                         "median_body_size_µm2")
+
+# Find the number of ecosystems in the experiment
+
+n_ecosystems = max(ecosystem_info$ecosystem_ID)
+
+# Define the treatments and controls
+
+treatments_and_controls = data.frame(treatment = c("Small autotrophic connected",
+                                                   "Small heterotrophic connected",
+                                                   "Medium autotrophic connected",
+                                                   "Medium heterotrophic connected",
+                                                   "Large autotrophic connected",
+                                                   "Large heterotrophic connected"),
+                                     control = c("Small autotrophic unconnected",
+                                                 "Small heterotrophic unconnected",
+                                                 "Medium autotrophic unconnected",
+                                                 "Medium heterotrophic unconnected",
+                                                 "Large autotrophic unconnected",
+                                                 "Large heterotrophic unconnected"))
+
+n_treatments = length(unique(treatments_and_controls$treatment))
+n_controls = length(unique(treatments_and_controls$control))
+
+# Find the ID of autotrophic and heterotrophic ecosystems
+
+ecosystem_IDs_autotrophic = ecosystem_info %>%
+  filter(trophic_type == "autotrophic") %>%
+  pull(ecosystem_ID)
+
+ecosystem_IDs_heterotrophic = ecosystem_info %>%
+  filter(trophic_type == "heterotrophic") %>%
+  pull(ecosystem_ID)
+```
+
+```{r metaecosystems-parameters}
+
+# --- SET PARAMETERS RELATED TO META-ECOSYSTEMS --- #
+
+# Initialise the "ds_metaecosystems" dataset
+
+ds_metaecosystems = list()
+
+# Define meta-ecosystems to take off because of problems in the experiment
+
+metaecosystems_to_take_off = NULL
+
+# Define the variables you want to calculate for each meta-ecosystem
+
+variables_metaecos = c("total_metaecosystem_bioarea_mm2")
+
+# Find the number of meta-ecosystems in the experiment
+
+system_nr_metaecosystems = ecosystem_info %>%
+  filter(connection == "connected") %>%
+  pull(system_nr) %>%
+  unique
+
+n_metaecosystems = length(system_nr_metaecosystems)
+
+# Define the treatments and controls
+
+treatments_and_controls_metaecos = data.frame(treatment = c("HD connected",
+                                                            "AD connected",
+                                                            "ED connected"),
+                                              control = c("HD unconnected",
+                                                          "AD unconnected",
+                                                          "ED unconnected"))
+
+n_treatments_metaecos = length(unique(treatments_and_controls_metaecos$treatment))
+n_controls_metaecos = length(unique(treatments_and_controls_metaecos$control))
+```
+
+```{r plotting-parameters}
+
+# --- SET PARAMETERS FOR PLOTTING --- #
+
+# Set line colours 
+
+treatment_colours = c("AD" = "#5ab4ac",
+                      "ED" = "#969696",
+                      "HD" = "#d8b365",
+                      
+                      "HD connected" = "#CB4335",
+                      "AD connected" = "#6C3483",
+                      "ED connected" = "black",
+                      "HD unconnected" = "#CB4335",
+                      "AD unconnected" = "#6C3483",
+                      "ED unconnected" = "black",
+                      
+                      "Small heterotrophic" = "#c6dbef",
+                      "Medium heterotrophic" = "#3182bd",
+                      "Large heterotrophic" = "#08306b",
+                      "Small autotrophic" = "#c7e9c0",
+                      "Medium autotrophic" = "#2ca25f",
+                      "Large autotrophic" = "#00441b",
+                      
+                      "Small heterotrophic unconnected" = "#deebf7",
+                      "Small heterotrophic connected" = "#deebf7",
+                      "Medium heterotrophic unconnected" = "#9ecae1",
+                      "Medium heterotrophic connected" = "#9ecae1",
+                      "Large heterotrophic unconnected" = "#3182bd",
+                      "Large heterotrophic connected" = "#3182bd",
+                      "Small autotrophic unconnected" = "#ccece6",
+                      "Small autotrophic connected" = "#ccece6",
+                      "Medium autotrophic unconnected" = "#99d8c9",
+                      "Medium autotrophic connected" = "#99d8c9",
+                      "Large autotrophic unconnected" = "#2ca25f",
+                      "Large autotrophic connected" = "#2ca25f")
+
+# Set line types
+
+treatment_linetypes = c("connected" = "solid",
+                        "unconnected" = "longdash")
+
+# Set figure height and width in the RMD output
+
+figures_width_rmd_output = 10
+figures_height_rmd_output = 7
+
+# Set parameters legend
+
+legend_position = "top"
+legend_width_cm = 2
+size_legend = 12
+
+# Set parameters boxplots
+
+boxplot_width = 2
+
+# Set parameters points & error bars
+
+treatment_points_size = 2.5
+width_errorbar = 0.2
+dodging_error_bar = 0.5
+dodging = 0.5 
+
+# Set parameters lines
+
+treatment_lines_linewidth = 1
+
+# Set parameters resource flow line (vertical line indicating the days of the resource flow)
+
+resource_flow_line_type = "solid"
+resource_flow_line_colour = "#d9d9d9"
+resource_flow_line_width = 0.3
+
+# Set parameters of the horizontal line crossing zero
+
+zero_line_colour = "grey"
+zero_line_line_type = "dotted"
+zero_line_line_width = 0.5
+zero_line_ES_line_type = "dotted"
+zero_line_ES_colour = "grey"
+zero_line_ES_line_width = 1
+
+# Set parameters of the package "ggarrange" which combines multiple ggplots
+
+ggarrange_margin_top = 0
+ggarrange_margin_bottom = 0
+ggarrange_margin_left = 0
+ggarrange_margin_right = 0
+
+# Set parameters of the figures saved for the paper
+
+paper_width = 17.3
+paper_height = 20
+paper_units = "cm"
+paper_res = 600
+paper_labels_size = 12
+
+# Set parameters of the figures saved for presentations
+
+presentation_figure_size = 15
+presentation_figure_width = 30
+presentation_figure_height = 22
+presentation_labels_size = 24
+presentation_x_axis_size = 20
+presentation_y_axis_size = presentation_x_axis_size
+presentation_treatment_points_size = 5
+presentation_treatment_linewidth = 2
+presentation_figure_units = "cm"
+presentation_figure_res = 600
+
+# Set parameters for the grey background used to show the time points excluded from the analysis
+
+grey_background_xmin = -Inf
+grey_background_xmax = 11.5
+grey_background_ymin = -Inf
+grey_background_ymax = Inf
+grey_background_fill = "#f0f0f0"
+grey_background_alpha = 0.03
+grey_background_color = "transparent"
+
+# Set parameters axes
+
+size_x_axis = 16
+size_y_axis = 14
+
+axis_names = data.frame(variable = NA,
+                        axis_name = NA) %>%
+  
+  add_row(variable = "day", axis_name = "Time (day)") %>%
+  add_row(variable = "ecosystem_size_ml", axis_name = "Ecosystem Size (ml)") %>%
+  
+  add_row(variable = "total_metaecosystem_bioarea_mm2", axis_name = "Total Biomass (mm2)") %>%
+  
+  add_row(variable = "bioarea_mm2_per_ml", axis_name = "Biomass (mm2/ml)") %>%
+  add_row(variable = "bioarea_mm2_per_ml_d", axis_name = "Effect Size of Bioarea Density") %>%
+  
+  add_row(variable = "log10_bioarea_mm2_per_ml", axis_name = "Log10 Biomass (mm2/ml)") %>%
+  add_row(variable = "ln_bioarea_mm2_per_ml", axis_name = "Ln Biomass (mm2/ml)") %>%
+  add_row(variable = "sqrt_bioarea_mm2_per_ml", axis_name = "Sqrt Biomass (mm2/ml)") %>%
+  
+  add_row(variable = "indiv_per_ml", axis_name = "Abundance (ind/ml)") %>%
+  add_row(variable = "indiv_per_ml_d", axis_name = "Effect Size of Abundance") %>%
+  
+  add_row(variable = "species_richness", axis_name = "Species Richness") %>%
+  add_row(variable = "species_richness_d", axis_name = "Effect Size of Species Richness") %>%
+  
+  add_row(variable = "shannon", axis_name = "Shannon Index") %>%
+  add_row(variable = "shannon_d", axis_name = "Effect Size of Shannon Index") %>%
+  
+  add_row(variable = "evenness_pielou", axis_name = "Evenness (Pielou's Index)") %>%
+  add_row(variable = "evenness_pielou_d", axis_name = "Effect Size of Evenness") %>%
+  
+  add_row(variable = "median_body_size_µm2", axis_name = "Median Body Size (µm2)") %>%
+  add_row(variable = "median_body_size_µm2_d", axis_name = "Effect Size of Median Body Size") %>%
+  
+  add_row(variable = "Ble_indiv_per_ml", axis_name = "Ble Density (ind/ml)") %>% 
+  add_row(variable = "Cep_indiv_per_ml", axis_name = "Cep Density (ind/ml)") %>%
+  add_row(variable = "Col_indiv_per_ml", axis_name = "Col Density (ind/ml)") %>%
+  add_row(variable = "Eug_indiv_per_ml", axis_name = "Eug Density (ind/ml)") %>%
+  add_row(variable = "Eup_indiv_per_ml", axis_name = "Eup Density (ind/ml)") %>%
+  add_row(variable = "Lox_indiv_per_ml", axis_name = "Lox Density (ind/ml)") %>%
+  add_row(variable = "Pau_indiv_per_ml", axis_name = "Pau Density (ind/ml)") %>%
+  add_row(variable = "Pca_indiv_per_ml", axis_name = "Pca Density (ind/ml)") %>%
+  add_row(variable = "Spi_indiv_per_ml", axis_name = "Spi Density (ind/ml)") %>%
+  add_row(variable = "Spi_te_indiv_per_ml", axis_name = "Spi te Density (ind/ml)") %>%
+  add_row(variable = "Tet_indiv_per_ml", axis_name = "Tet Density (ind/ml)") %>%
+  
+  add_row(variable = "Ble_indiv_per_ml_d", axis_name = "Effect Size of Ble Density") %>%
+  add_row(variable = "Cep_indiv_per_ml_d", axis_name = "Effect Size of Cep Density") %>%
+  add_row(variable = "Col_indiv_per_ml_d", axis_name = "Effect Size of Col Density") %>%
+  add_row(variable = "Eug_indiv_per_ml_d", axis_name = "Effect Size of Eug Density") %>%
+  add_row(variable = "Eup_indiv_per_ml_d", axis_name = "Effect Size of Eup Density") %>%
+  add_row(variable = "Lox_indiv_per_ml_d", axis_name = "Effect Size of Lox Density") %>%
+  add_row(variable = "Pau_indiv_per_ml_d", axis_name = "Effect Size of Pau Density") %>%
+  add_row(variable = "Pca_indiv_per_ml_d", axis_name = "Effect Size of Pca Density") %>%
+  add_row(variable = "Spi_indiv_per_ml_d", axis_name = "Effect Size of Spi Density") %>%
+  add_row(variable = "Spi_te_indiv_per_ml_d", axis_name = "Effect Size of Spi te Density") %>%
+  add_row(variable = "Tet_indiv_per_ml_d", axis_name = "Effect Size of Tet Density") %>%
+  
+  add_row(variable = "dominance", axis_name = "Dominance (%)") %>%
+  
+  add_row(variable = "Ble_indiv_per_ml_dominance", axis_name = "Ble Dominance (%)") %>%
+  add_row(variable = "Cep_indiv_per_ml_dominance", axis_name = "Cep Dominance (%)") %>%
+  add_row(variable = "Col_indiv_per_ml_dominance", axis_name = "Col Dominance (%)") %>%
+  add_row(variable = "Eug_indiv_per_ml_dominance", axis_name = "Eug Dominance (%)") %>%
+  add_row(variable = "Eup_indiv_per_ml_dominance", axis_name = "Eup Dominance (%)") %>%
+  add_row(variable = "Lox_indiv_per_ml_dominance", axis_name = "Lox Dominance (%)") %>%
+  add_row(variable = "Pau_indiv_per_ml_dominance", axis_name = "Pau Dominance (%)") %>%
+  add_row(variable = "Pca_indiv_per_ml_dominance", axis_name = "Pca Dominance (%)") %>%
+  add_row(variable = "Spi_indiv_per_ml_dominance", axis_name = "Spi Dominance (%)") %>%
+  add_row(variable = "Spi_te_indiv_per_ml_dominance", axis_name = "Spi te Dominance (%)") %>%
+  add_row(variable = "Tet_indiv_per_ml_dominance", axis_name = "Tet Dominance (%)") %>%
+  add_row(variable = "Ble_indiv_per_ml_dominance_d", axis_name = "Effect Size of Ble Dominance") %>%
+  add_row(variable = "Cep_indiv_per_ml_dominance_d", axis_name = "Effect Size of Cep Dominance") %>%
+  add_row(variable = "Col_indiv_per_ml_dominance_d", axis_name = "Effect Size of Col Dominance") %>%
+  add_row(variable = "Eug_indiv_per_ml_dominance_d", axis_name = "Effect Size of Eug Dominance") %>%
+  add_row(variable = "Eup_indiv_per_ml_dominance_d", axis_name = "Effect Size of Eup Dominance") %>%
+  add_row(variable = "Lox_indiv_per_ml_dominance_d", axis_name = "Effect Size of Lox Dominance") %>%
+  add_row(variable = "Pau_indiv_per_ml_dominance_d", axis_name = "Effect Size of Pau Dominance") %>%
+  add_row(variable = "Pca_indiv_per_ml_dominance_d", axis_name = "Effect Size of Pca Dominance") %>%
+  add_row(variable = "Sp_indiv_per_mli_dominance_d", axis_name = "Effect Size of Spi Dominance") %>%
+  add_row(variable = "Spi_te_indiv_per_ml_dominance_d", axis_name = "Effect Size of Spi te Dominance") %>%
+  add_row(variable = "Tet_indiv_per_ml_dominance_d", axis_name = "Effect Size of Tet Dominance") %>%
+  
+  add_row(variable = "log_size_class", axis_name = "Log Size (μm2)") %>%
+  add_row(variable = "class_indiv_per_µl", axis_name = "Density (ind/ml)") %>%
+  
+  add_row(variable = "median_body_area_µm2", axis_name = "Median Body Size (µm²)") %>%
+  add_row(variable = "median_body_area_µm2_d", axis_name = "Effect Size of Median Body Size") %>%
+  
+  slice(-1)
+```
+
+```{r modelling-parameters}
+
+# --- SET PARAMETERS FOR MODELLING --- #
+
+# Decide which time points you want to include in the analysis. We chose the 
+# first time point as 2 because it's after the first disturbance.
+
+time_points_model = 2:4 
+
+# Decide optimizers for mixed effect models
+
+optimizer_input = 'Nelder_Mead'
+method_input = ''
+```

@@ -1,0 +1,44 @@
+---
+title: "Set results parameters"
+output: html_document
+date: "2023-02-12"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+
+# --- SET RESULT PARAMETERS --- #
+
+treatment_colours = c("Small heterotrophic connected"= "#3182bd",
+                      "Medium heterotrophic connected"= "#3182bd",
+                      "Large heterotrophic connected" = "#3182bd",
+                      "Small autotrophic connected" = "#2ca25f",
+                      "Medium autotrophic connected" = "#2ca25f",
+                      "Large autotrophic connected" = "#2ca25f",
+                      
+                      "Small heterotrophic unconnected"= "#3182bd",
+                      "Medium heterotrophic unconnected"= "#3182bd",
+                      "Large heterotrophic unconnected" = "#3182bd",
+                      "Small autotrophic unconnected" = "#2ca25f",
+                      "Medium autotrophic unconnected" = "#2ca25f",
+                      "Large autotrophic unconnected" = "#2ca25f",
+                      
+                      "Small heterotrophic"= "#3182bd",
+                      "Medium heterotrophic"= "#3182bd",
+                      "Large heterotrophic" = "#3182bd",
+                      "Small autotrophic" = "#2ca25f",
+                      "Medium autotrophic" = "#2ca25f",
+                      "Large autotrophic" = "#2ca25f",
+                      
+                      "AD" = "#5ab4ac",
+                      "ED" = "#969696",
+                      "HD" = "#d8b365",
+                      
+                      "AD connected" = "#5ab4ac",
+                      "ED connected" = "#969696",
+                      "HD connected" = "#d8b365",
+                      "AD unconnected" = "#5ab4ac",
+                      "ED unconnected" = "#969696",
+                      "HD unconnected" = "#d8b365")
+```
