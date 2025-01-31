@@ -12,8 +12,6 @@ To be able to then identify protist species in the experiment, prior to the main
 - 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower threshold
 - 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower threshold
 
-==AA==
-
 
 
 # OLD
