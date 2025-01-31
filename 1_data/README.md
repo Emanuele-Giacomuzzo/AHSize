@@ -30,10 +30,11 @@ The columns in the ecosystems_info file represent the following (this file uses 
 
 
 # Content of the folder
-- 13_threshold_analysis_t0.csv: Analysis of cultures at initial time point (t0)
-- 13_threshold_analysis_t1.csv: Analysis of cultures at time point 1
-- 13_threshold_analysis_t2.csv: Analysis of cultures at time point 2
-- 13_threshold_analysis_t3.csv: Analysis of cultures at time point 3
-- 13_threshold_analysis_t4.csv: Analysis of cultures at final time point (t4)
-- 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower threshold
-- 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower threshold
+- ecosystem_info.csv: Information about the ecosystems
+- t0.csv: Analysis of cultures at time point 0
+- t1.csv: Analysis of cultures at time point 1
+- t2.csv: Analysis of cultures at time point 2
+- t3.csv: Analysis of cultures at time point 3
+- t4.csv: Analysis of cultures at final time point (t4)
+- training_threshold_13.csv: Morphology and behavior data for monocultures analysed at the 13 lower threshold
+- training_threshold_40.csv: Morphology and behavior data for monocultures analysed at the 40 lower threshold
