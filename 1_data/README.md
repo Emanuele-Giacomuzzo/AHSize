@@ -1,16 +1,16 @@
-# 
+# Experimental data
 
 This repository contains the experimental data on morphology and movement of protist species.
 
 ## Training data
 
 To be able to then identify protist species in the experiment, prior to the main experiment we filmed at least 100 individuals for each protist species. The analysis of these footages was performed using the BEMOVI R package (based on ImageJ) to extract morphological and behavioral characteristics. We implemented two different intensity thresholds for image analysis:
-- A threshold of 13 was used for most protist species
-- A threshold of 40 was used for Blepharisma sp. to distinguish it from the prey species it was kept with in monocultures
+- A lower pixel intensity threshold of 13 was used for most protist species
+- A lower pixel intensity threshold of 40 was used for Blepharisma sp. to distinguish it from the prey species it was kept with in monocultures
 
 Files:
-- 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower intensity threshold
-- 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower intensity threshold
+- 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower threshold
+- 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower threshold
 
 
 
