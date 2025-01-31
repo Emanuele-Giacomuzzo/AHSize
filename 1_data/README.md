@@ -11,8 +11,7 @@ To be able to then identify protist species in the experiment, prior to the main
 ## Time point (t0-4) data
 We subsequently filmed ecosystem samples at five distinct time points (t0-t4) using BEMOVI software. A threshold of 13 was selected as the optimal setting for capturing protist characteristics while minimizing background noise.
 
-
-## Content of the folder 
+# Content of the folder 
 - 13_threshold_analysis_t0.csv: Analysis of cultures at initial time point (t0)
 - 13_threshold_analysis_t1.csv: Analysis of cultures at time point 1
 - 13_threshold_analysis_t2.csv: Analysis of cultures at time point 2
