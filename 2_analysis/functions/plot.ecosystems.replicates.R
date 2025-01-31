@@ -1,6 +1,6 @@
 plot.ecosystems.replicates = function(data,
                                       ecosystem_type_input,
-                                      response_variable,
+                                      response_variable_selected,
                                       legend_row_n_input = 2) {
   
   data %>%
@@ -12,7 +12,7 @@ plot.ecosystems.replicates = function(data,
     # Create plot
     
     ggplot(aes(x = day,
-               y = get(response_variable),
+               y = get(response_variable_selected),
                group = ecosystem_ID,
                fill = ecosystem_ID,
                color = ecosystem_type,
@@ -26,7 +26,7 @@ plot.ecosystems.replicates = function(data,
     # Axes & legend
     
     labs(x = axis_names$axis_name[axis_names$variable == "day"],
-         y = axis_names$axis_name[axis_names$variable == response_variable],
+         y = axis_names$axis_name[axis_names$variable == response_variable_selected],
          linetype = "") +
     scale_x_continuous(breaks = unique(data$day)) +
     guides(color = guide_legend(order = 1,

@@ -18,7 +18,8 @@ if (!requireNamespace("renv", quietly = TRUE)) {
   install.packages("renv")
 }
  
-#Reinstall the specific package versions that were used when writing code for this project. 
+# Reinstall the specific package versions that were used when writing code for 
+# this project. 
 
 # setwd("..")
 # renv::restore()
@@ -44,6 +45,7 @@ library("plotly")
 library("rempsyc")
 library("broom")
 library("officer")
+library("ggforce") # for creating geometrical shapes
 
 #Data analysis
 library("lmerTest") #To use mixed effects models that get you p-values and F statistics

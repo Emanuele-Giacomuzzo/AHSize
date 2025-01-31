@@ -10,35 +10,40 @@ editor_options:
 
 # --- SET RESULT PARAMETERS --- #
 
-treatment_colours = c("Small heterotrophic connected"= "#3182bd",
-                      "Medium heterotrophic connected"= "#3182bd",
-                      "Large heterotrophic connected" = "#3182bd",
-                      "Small autotrophic connected" = "#2ca25f",
-                      "Medium autotrophic connected" = "#2ca25f",
-                      "Large autotrophic connected" = "#2ca25f",
+colour_autotrophs = "#2ca25f"
+colour_heterotrophs = "#3182bd"
+
+treatment_colours = c("autotrophic" = colour_autotrophs,
+                      "heterotrophic" = colour_heterotrophs,
+                      "Small heterotrophic connected"= colour_heterotrophs,
+                      "Medium heterotrophic connected"= colour_heterotrophs,
+                      "Large heterotrophic connected" = colour_heterotrophs,
+                      "Small autotrophic connected" = colour_autotrophs,
+                      "Medium autotrophic connected" = colour_autotrophs,
+                      "Large autotrophic connected" = colour_autotrophs,
                       
-                      "Small heterotrophic unconnected"= "#3182bd",
-                      "Medium heterotrophic unconnected"= "#3182bd",
-                      "Large heterotrophic unconnected" = "#3182bd",
-                      "Small autotrophic unconnected" = "#2ca25f",
-                      "Medium autotrophic unconnected" = "#2ca25f",
-                      "Large autotrophic unconnected" = "#2ca25f",
+                      "Small heterotrophic unconnected"= colour_heterotrophs,
+                      "Medium heterotrophic unconnected"= colour_heterotrophs,
+                      "Large heterotrophic unconnected" = colour_heterotrophs,
+                      "Small autotrophic unconnected" = colour_autotrophs,
+                      "Medium autotrophic unconnected" = colour_autotrophs,
+                      "Large autotrophic unconnected" = colour_autotrophs,
                       
-                      "Small heterotrophic"= "#3182bd",
-                      "Medium heterotrophic"= "#3182bd",
-                      "Large heterotrophic" = "#3182bd",
-                      "Small autotrophic" = "#2ca25f",
-                      "Medium autotrophic" = "#2ca25f",
-                      "Large autotrophic" = "#2ca25f",
+                      "Small heterotrophic"= colour_heterotrophs,
+                      "Medium heterotrophic"= colour_heterotrophs,
+                      "Large heterotrophic" = colour_heterotrophs,
+                      "Small autotrophic" = colour_autotrophs,
+                      "Medium autotrophic" = colour_autotrophs,
+                      "Large autotrophic" = colour_autotrophs,
                       
-                      "AD" = "#5ab4ac",
-                      "ED" = "#969696",
-                      "HD" = "#d8b365",
+                      "autotrophic-dominated" = "#5ab4ac",
+                      "equally-dominated" = "#969696",
+                      "heterotrophic-dominated" = "#d8b365",
                       
-                      "AD connected" = "#5ab4ac",
-                      "ED connected" = "#969696",
-                      "HD connected" = "#d8b365",
-                      "AD unconnected" = "#5ab4ac",
-                      "ED unconnected" = "#969696",
-                      "HD unconnected" = "#d8b365")
+                      "autotrophic-dominated connected" = "#5ab4ac",
+                      "equally-dominated connected" = "#969696",
+                      "heterotrophic-dominated connected" = "#d8b365",
+                      "autotrophic-dominated unconnected" = "#5ab4ac",
+                      "equally-dominated unconnected" = "#969696",
+                      "heterotrophic-dominated unconnected" = "#d8b365")
 ```

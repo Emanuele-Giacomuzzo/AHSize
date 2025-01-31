@@ -1,0 +1,282 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-10-21"
+editor_options: 
+  chunk_output_type: console
+---
+
+### R and package versions
+
+```{r}
+sessionInfo()
+```
+
+### Running time
+
+```{r running-time, echo = FALSE, eval = TRUE}
+end_time = Sys.time()
+end_time - start_time
+```
+
+### Useful code
+
+If you want to change a certain part of the code using the following code in Unix:
+
+```{batch eval = FALSE}
+#Rmd script
+cd /Users/ema/Documents/GitHub/AHSize/r_files; sed -i '' 's/old_string/new_string/g' *.Rmd
+
+#R script
+cd /Users/ema/Documents/GitHub/AHSize/r_files/functions; sed -i '' 's/old_string/new_string/g' *.R
+```
+
+If you want to share a dataset and get a reproducible object, use the following R code:
+
+```{batch eval = FALSE}
+dput(data)
+```
+
+### Sampled rows
+
+This are 20 random columns of ds_metaecosystems that you can use to input into chatGPT to give it an idea of what the structure of your data is.
+
+```{r}
+ds_metaecosystems %>% 
+  sample_n(20, 
+           replace = FALSE) %>%
+  dput()
+```
+
+```{r echo=FALSE, message=FALSE}
+
+# --- SAVE ENVIRONMENT --- #
+
+save.image(file = here("..",
+                       "3_results", 
+                       "environments", 
+                       "environment_at_the_of_knitting.RData"))
+```
+
+### Create circles for design figure
+
+```{r}
+
+# Set parameters
+
+resource_flow_ml = 5.25
+small_ecos_ml = 7.5
+medium_ecos_ml = 22.5
+large_ecos_ml = 37.5
+
+colour_autotorophs_dark = "#2ca25f"
+colour_autotorophs_light = "#bbe1c1"
+
+colour_heterotrophs_dark = "#3182bd"
+colour_heterotrophs_light = "#ADD8E6"
+```
+
+```{r}
+
+# Create a function to plot the circles
+
+generate_circle_plot <- function(eco_ml, 
+                                 disturbed_percentage, 
+                                 diameter, 
+                                 colour_selected) {
+  
+  # Select colour
+  
+  if(colour_selected == "autotorophs_dark"){
+    colour_circles = colour_autotorophs_dark
+  }
+  if(colour_selected == "autotorophs_light"){
+    colour_circles = colour_autotorophs_light
+  }
+  if(colour_selected == "heterotrophs_dark"){
+    colour_circles = colour_heterotrophs_dark
+  }
+  if(colour_selected == "heterotrophs_light"){
+    colour_circles = colour_heterotrophs_light
+  }
+  
+  # Calculate circle parameters
+  
+  circle_area <- eco_ml    # mm²
+  radius <- sqrt(circle_area / pi)  # Calculate radius
+  
+  # Target segment coverage (minor segment)
+  
+  minor_target_coverage <- (100 - disturbed_percentage) / 100
+  
+  # Function to calculate segment height for a given coverage
+  
+  calculate_segment_height <- function(radius, target_coverage) {
+    
+    # Define optimization function
+
+    optimize_height <- function(h) {
+      r <- radius
+      segment_area <- r*r * acos((r-h)/r) - (r-h) * sqrt(2*r*h - h*h)
+      abs(segment_area / (pi * r*r) - target_coverage)
+    }
+    
+    # Use optimization to find the height
+    
+    result <- optim(par = radius/2, 
+                    fn = optimize_height, 
+                    method = "Brent", 
+                    lower = 0, 
+                    upper = radius)
+    
+    return(result$par)
+  }
+  
+  # Calculate the segment height for the desired coverage
+  
+  minor_segment_height <- calculate_segment_height(radius, minor_target_coverage)
+  
+  # Angle corresponding to the minor segment's height
+  
+  theta_minor <- acos((radius - minor_segment_height) / radius)
+  
+  # Create points for the circle and the chord
+  
+  n_points <- 200
+  angle_seq <- seq(0, 2*pi, length.out = n_points)  # Full circle
+  
+  # Circle data
+  
+  circle_data <- data.frame(x = radius * cos(angle_seq),
+                            y = radius * sin(angle_seq))
+  
+  # Chord endpoints (start and end of the minor segment)
+  
+  chord_x <- c(radius * cos(theta_minor), radius * cos(-theta_minor))
+  chord_y <- c(radius * sin(theta_minor), radius * sin(-theta_minor))
+  
+  # Plot
+  
+  plot_to_save <- ggplot() +
+    
+    # Outer full circle
+    
+    geom_polygon(data = circle_data, 
+                 aes(x = x, 
+                     y = y), 
+                 fill = colour_circles, 
+                 color = "black") +
+    
+    # Chord that divides the circle
+    
+    geom_segment(aes(x = chord_x[1], 
+                     y = chord_y[1], 
+                     xend = chord_x[2], 
+                     yend = chord_y[2]), 
+                 color = "red", 
+                 size = 0.5) +
+    coord_fixed() +
+    theme_void()
+  
+  # Save the plot
+  
+  ggsave(here("..", 
+              "3_results", 
+              "figures",
+              "other_graphic_elements",
+              paste0(colour_selected,
+                     "_",
+                     eco_ml, 
+                     "_ml.png")), 
+         plot = plot_to_save, 
+         width = diameter, 
+         height = diameter, 
+         dpi = 300)
+}
+```
+
+```{r}
+
+# Autotrophic ecosystems with dark colour
+
+colour_selected = "autotorophs_dark"
+
+generate_circle_plot(eco_ml = small_ecos_ml, 
+                     disturbed_percentage = (resource_flow_ml/ small_ecos_ml) * 100, 
+                     diameter = 3.088, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = medium_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ medium_ecos_ml) * 100, 
+                     diameter = 5.360, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = large_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ large_ecos_ml) * 100, 
+                     diameter = 6.920, 
+                     colour_selected = colour_selected)
+
+# Autotrophic ecosystems with light colour
+
+colour_selected = "autotorophs_light"
+
+generate_circle_plot(eco_ml = small_ecos_ml, 
+                     disturbed_percentage = (resource_flow_ml/ small_ecos_ml) * 100, 
+                     diameter = 3.088, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = medium_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ medium_ecos_ml) * 100, 
+                     diameter = 5.360, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = large_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ large_ecos_ml) * 100, 
+                     diameter = 6.920, 
+                     colour_selected = colour_selected)
+
+# Heterotrophic ecosystems with dark colour
+
+colour_selected = "heterotrophs_dark"
+
+generate_circle_plot(eco_ml = small_ecos_ml, 
+                     disturbed_percentage = (resource_flow_ml/ small_ecos_ml) * 100, 
+                     diameter = 3.088, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = medium_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ medium_ecos_ml) * 100, 
+                     diameter = 5.360, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = large_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ large_ecos_ml) * 100, 
+                     diameter = 6.920, 
+                     colour_selected = colour_selected)
+
+# Autotrophic ecosystems with light colour
+
+colour_selected = "heterotrophs_light"
+
+generate_circle_plot(eco_ml = small_ecos_ml, 
+                     disturbed_percentage = (resource_flow_ml/ small_ecos_ml) * 100, 
+                     diameter = 3.088, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = medium_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ medium_ecos_ml) * 100, 
+                     diameter = 5.360, 
+                     colour_selected = colour_selected)
+
+generate_circle_plot(eco_ml = large_ecos_ml, 
+                     disturbed_percentage = 100 - (resource_flow_ml/ large_ecos_ml) * 100, 
+                     diameter = 6.920, 
+                     colour_selected = colour_selected)
+```
+
+### Random comments
+
+- It seems like in the heterotrophic-dominated (heterotrophic-dominated) meta-ecosystems at t1, the unconnected treatment had more total biomass. This is wired, as it is before the first disturbance and therefore connections have not taken place yet. The reason why unconnected heterotrophic-dominated meta-ecosystems had more total biomass seems to be that one of the unconnected had a really productive heterotrophic ecosystem (ecosystem ID = 28). I checked the original video and I see no problem in it.
+- We don't use a Restricted Maximum Likelihood (REML) because, while REML is robust to missing data, it may not perform well with very small sample sizes, especially when the number of random effects is large relative to the number of observations (ChatGPT).
+- Significance is tested by comparing their slope against zero using a t-test which employs the Satterthwaite's method to estimate the degrees of freedom for the two groups (fixed variable slope and zero). This method is conservative in order to prevent false positives (Li & Redden, 2015). An alternative method that could be used is the Kenward-Roger's method, however, it is expected to perform similarly. Because the model utilises Satterthwaite's method, it should entail a Welch t-test (according to information gleaned from [this Wikipedia page](https://en.wikipedia.org/wiki/Welch%E2%80%93Satterthwaite_equation)), which does not assume equal variance in the two groups. There is no option in this package to alter the type of t-test.
+- We employ a type III ANOVA on the full model. This method accommodates unbalanced designs and yields the same results to type I ANOVA in balanced  designs ([Uni Goettingen](https://md.psych.bio.uni-goettingen.de/mv/unit/lm_cat/lm_cat_unbal_ss_explained.html)). We utilise Satterthwaite's method to estimate the degrees of freedom for the two groups. But just knowing whether or not there is an effect is not enough. If there is an effect, we want to know which levels were different. Therefore, we proceed to analyse the contrasts among levels, ensuring that the P values go through a Tukey adjustment to account for the multiple comparisons (see [this link for contrast coding](https://aosmith.rbind.io/2019/04/15/custom-contrasts-emmeans/)).

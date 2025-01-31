@@ -1,5 +1,5 @@
 plot.metaecos.replicates.one.by.one = function(data,
-                                              response_variable,
+                                              response_variable_selected,
                                               legend_row_n_input = 2) {
   
   for(metaecosystem_type_n in c(1,3,5)){
@@ -18,7 +18,7 @@ plot.metaecos.replicates.one.by.one = function(data,
       # Create plot
       
       ggplot(aes(x = day,
-                 y = get(response_variable),
+                 y = get(response_variable_selected),
                  group = system_nr,
                  fill = system_nr,
                  linetype = connection)) +
@@ -31,7 +31,7 @@ plot.metaecos.replicates.one.by.one = function(data,
       # Axes & legend
       
       labs(x = axis_names$axis_name[axis_names$variable == "day"],
-           y = axis_names$axis_name[axis_names$variable == response_variable],
+           y = axis_names$axis_name[axis_names$variable == response_variable_selected],
            linetype = "") +
       scale_x_continuous(breaks = unique(data$day)) +
       guides(linetype = guide_legend(order = 2,

@@ -38,53 +38,53 @@ editor_options:
 
 ### Produce data from videos
 
-```{r child = here("r_markdown_files", "05_process_videos.Rmd"), class.source = 'fold-show', eval = FALSE}
+```{r child = here("r_markdown_files", "05_generate_data_from_videos.Rmd"), class.source = 'fold-show', eval = FALSE}
 ```
 
 ### Individuals (`ds_individuals`)
 
-```{r child = here("r_markdown_files", "06_ds_individuals.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "06_create_ds_individuals_assemble.Rmd"), class.source = 'fold-show'}
 ```
 
-```{r child = here("r_markdown_files", "07_species_ID.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "07_create_ds_individuals_species_ID.Rmd"), class.source = 'fold-show'}
 ```
 
 ### Ecosystems (`ds_ecosystems`)
 
-```{r child = here("r_markdown_files", "08_ds_ecosystems.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "08_create_ds_ecosystems.Rmd"), class.source = 'fold-show'}
 ```
 
 ### Species dominances with CI (`ds_dominances_with_CI`)
 
-```{r child = here("r_markdown_files", "09_ds_dominances_with_CI.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "09_create_ds_dominances_with_CI.Rmd"), class.source = 'fold-show'}
 ```
 
 ### Ecosystems effect sizes (`ds_ecosystems_effect_size`)
 
-```{r child = here("r_markdown_files", "10_ds_ecos_effect_size.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "10_create_ds_ecos_effect_size.Rmd"), class.source = 'fold-show'}
 ```
 
 ### Species effect sizes d (`ds_species_effect_sizes_d`)
 
-```{r child = here("r_markdown_files", "11_ds_species_effect_sizes_d.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "11_create_ds_species_effect_sizes_d.Rmd"), class.source = 'fold-show'}
 ```
 
 ### Species effect sizes LRR (`ds_species_effect_sizes_LRR`)
 
-```{r child = here("r_markdown_files", "12_ds_species_effect_sizes_LRR.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "12_create_ds_species_effect_sizes_LRR.Rmd"), class.source = 'fold-show'}
 ```
 
 ### Meta-ecosystems (`ds_metaecosystems`)
 
-```{r child = here("r_markdown_files", "13_ds_metaecosystems.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "13_create_ds_metaecosystems.Rmd"), class.source = 'fold-show'}
 ```
 
 ### Unconnected combination sets (`unconnected_combinations_sets` & `sets_of_sets`)
 
-```{r child = here("r_markdown_files", "14_unconnected_combinations_sets.Rmd"), class.source = 'fold-show'}
+```{r child = here("r_markdown_files", "14_create_unconnected_combinations_sets.Rmd"), class.source = 'fold-show'}
 ```
 
-```{r child = here("r_markdown_files", "15_ds_classes.Rmd"), eval = FALSE}
+```{r child = here("r_markdown_files", "15_create_ds_classes.Rmd"), eval = FALSE}
 ```
 
 ## Plots & analysis {.tabset .tabset-dropdown}
@@ -103,7 +103,8 @@ trophy_selected = "autotrophic"
 #### Biomass {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "bioarea_mm2_per_ml"
+response_variable_selected = "bioarea_mm2_per_ml"
+distribution_selected = "tweedie"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
@@ -112,10 +113,34 @@ response_variable = "bioarea_mm2_per_ml"
 #### Median body size {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "median_body_size_µm2"
+response_variable_selected = "median_body_size_µm2"
+distribution_selected = "tweedie"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
+```
+
+```{r results=FALSE}
+
+# --- SAVE PLOT --- #
+
+# Generate the image where to save the plot
+
+pdf(file = here("..",
+                "3_results", 
+                "figures", 
+                "paper", 
+                "ecosystems_median_body_size_auto.pdf"),
+    width = paper_width_inches,
+    height = paper_height_inches)
+
+# Save image to the file
+
+plot
+
+# Close the current graphics device to properly save the image
+
+dev.off()
 ```
 
 ### Heterotrophic ecosystems {.tabset .tabset-pills}
@@ -138,7 +163,8 @@ trophy_selected = "heterotrophic"
 #### Biomass {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "bioarea_mm2_per_ml"
+response_variable_selected = "bioarea_mm2_per_ml"
+distribution_selected = "tweedie"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
@@ -147,7 +173,8 @@ response_variable = "bioarea_mm2_per_ml"
 #### Species richness {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "species_richness"
+response_variable_selected = "species_richness"
+distribution_selected = "gaussian"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
@@ -156,16 +183,51 @@ response_variable = "species_richness"
 #### Shannon {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "shannon"
+response_variable_selected = "shannon"
+distribution_selected = "gaussian"
+```
+
+```{r echo=FALSE, message=FALSE}
+
+# --- SAVE ENVIRONMENT --- #
+
+save.image(file = here("..",
+                       "3_results", 
+                       "environments", 
+                       "before.RData"))
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
 ```
 
+```{r results=FALSE}
+
+# --- SAVE PLOT --- #
+
+# Generate the image where to save the plot
+
+pdf(file = here("..",
+                "3_results", 
+                "figures", 
+                "paper", 
+                "ecosystems_shannon_hetero.pdf"),
+    width = paper_width_inches,
+    height = paper_height_inches)
+
+# Save image to the file
+
+plot
+
+# Close the current graphics device to properly save the image
+
+dev.off()
+```
+
 #### Evenness {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "evenness_pielou"
+response_variable_selected = "evenness_pielou"
+distribution_selected = "gaussian"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
@@ -174,24 +236,47 @@ response_variable = "evenness_pielou"
 #### Median body size {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "median_body_size_µm2"
+response_variable_selected = "median_body_size_µm2"
+distribution_selected = "tweedie"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
 ```
 
+```{r results=FALSE}
+
+# --- SAVE PLOT --- #
+
+# Generate the image where to save the plot
+
+pdf(file = here("..",
+                "3_results", 
+                "figures", 
+                "paper", 
+                "ecosystems_median_body_size_hetero.pdf"),
+    width = paper_width_inches,
+    height = paper_height_inches)
+
+# Save image to the file
+
+plot
+
+# Close the current graphics device to properly save the image
+
+dev.off()
+```
+
 #### Total individuals {.tabset .tabset-dropdown}
 
 ```{r}
-response_variable = "indiv_per_ml"
+response_variable_selected = "indiv_per_ml"
+distribution_selected = "tweedie"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
 ```
 
 #### Dominance {.tabset .tabset-dropdown}
-
-We know that the connection of heterotrophic ecosystems to autotrophic ecosystems changed their biodiversity and biomass. However, we don't know if this change is due to community composition and how this could be explained through the composition of heterotrophic when not connected. Here, we plot how dominant species were in small/medium/large heterotrophic ecosystems when unconnected and when connected. The **dominance is expressed as percentage of biomass** in the species. First we plot species dominance for each ecosystem type. Then, we plot the effect size of the dominance between connected and unconnected. We use two effect sizes: Hedge's d-a more accurate effect size when handling zeros in the treatmtnet and/or control-and Log Response Ratio-a more easy to understand effect size.
 
 ##### Hedge's {.tabset}
 
@@ -213,45 +298,39 @@ We know that the connection of heterotrophic ecosystems to autotrophic ecosystem
 ```{r child = here("r_markdown_files", "21_set_parameters_results.Rmd")}
 ```
 
-```{r child = here("r_markdown_files", "24_paper_metaecos.Rmd")}
+```{r child = here("r_markdown_files", "22_save_plot_paper_metaecos.Rmd")}
 ```
 
-```{r child = here("r_markdown_files", "25_paper_ecos_biomass.Rmd")}
+```{r child = here("r_markdown_files", "23_save_plot_paper_ecos_biomass.Rmd")}
 ```
 
 <details>
 <summary>Presentation meta-ecosystems</summary>
-```{r child = here("r_markdown_files", "22_present_metaecos.Rmd")}
+```{r child = here("r_markdown_files", "24_save_plot_presentation_metaecos.Rmd")}
 ```
 </details>
 
 <details>
-<summary>Presentation plots AD ecosystems</summary>
-
-Create plots for presentations on how ecosystem biomass changed across connected and unconnected types. Start from plotting an empty figures and then show one line at the time.
-
+<summary>Presentation plots autotrophic-dominated ecosystems</summary>
 ```{r}
-metaecosystem_type_selected = "AD"
+metaecosystem_type_selected = "autotrophic-dominated"
 ```
 
-```{r child = here("r_markdown_files", "23_present_ecos.Rmd")}
+```{r child = here("r_markdown_files", "25_save_plot_presentation_ecos_biomass.Rmd")}
 ```
 </details>
 
 <details>
-<summary>Presentation plots HD ecosystems</summary>
-
-Create plots for presentations on how ecosystem evenness changed across connected and unconnected meta-ecosystem types. Start from plotting an empty figures and then show one line at the time.
-
+<summary>Presentation plots heterotrophic-dominated ecosystems</summary>
 ```{r}
-metaecosystem_type_selected = "HD"
+metaecosystem_type_selected = "heterotrophic-dominated"
 ```
 
-```{r child = here("r_markdown_files", "23_present_ecos.Rmd")}
+```{r child = here("r_markdown_files", "25_save_plot_presentation_ecos_biomass.Rmd")}
 ```
 </details>
 
 ## Other {.tabset .tabset-dropdown}
 
-```{r child = here("r_markdown_files", "28_show_other.Rmd")}
+```{r child = here("r_markdown_files", "26_show_other.Rmd")}
 ```

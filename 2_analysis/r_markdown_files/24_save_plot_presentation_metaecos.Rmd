@@ -1,0 +1,220 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-11-16"
+editor_options: 
+  chunk_output_type: console
+---
+
+Create plots for presentations on how meta-ecosystem biomass changed across connected and unconnected meta-ecosystem types. Start from plotting an empty figures and then show one line at the time.
+
+```{r set-parameters-for-plotting-present-metaecos}
+
+# --- SET PARAMETERS FOR PLOTTING --- #
+
+response_variable = "total_metaecosystem_bioarea_mm2"
+
+metaeco_type_n_connection_selected = c("equally-dominated unconnected",
+                                       "equally-dominated connected",
+                                       "autotrophic-dominated unconnected",
+                                       "autotrophic-dominated connected",
+                                       "heterotrophic-dominated unconnected",
+                                       "heterotrophic-dominated connected")
+
+x_min = 0
+x_max = sampling_days[length(sampling_days)]
+y_min = 50
+y_max = 750
+plot_label_x = 0.1
+plot_label_y = 0.8
+```
+
+```{r create-empty-plot-metaecos, results = FALSE}
+
+# --- CREATE AN EMPTY PLOT --- #
+
+# Set parameters
+
+connections_selected = ""
+types_selected = ""
+
+# Generate the image where to save the plot
+
+pdf(file = here("..",
+                "3_results",
+                "figures",
+                "presentations",
+                "metaecosystems_0.pdf"),
+    width = presentation_figure_width_inches,
+    height = presentation_figure_height_inches)
+
+# Prepare data for plotting
+
+data_for_plotting = ds_metaecosystems %>%
+  filter(!is.na(!!sym(response_variable)))
+
+# Create plot
+
+p = data_for_plotting %>%
+  ggplot(aes(x = day,
+             y = get(response_variable))) +
+  geom_point(stat = "summary",
+             fun = "mean",
+             position = position_dodge(dodging),
+             size = presentation_treatment_points_size) +
+  scale_x_continuous(breaks = sampling_days,
+                     limits = c(x_min, x_max)) +
+  ylim(y_min, y_max) +
+  labs(x = axis_names$axis_name[axis_names$variable == "day"],
+       y = axis_names$axis_name[axis_names$variable == response_variable]) +
+  font("xlab", size = presentation_labels_size) +
+  font("ylab", size = presentation_labels_size) +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = legend_position,
+        legend.key.width = unit(legend_width_cm, "cm"),
+        axis.title.x = element_text(size = presentation_labels_size),
+        axis.title.y = element_text(size = presentation_labels_size),
+        axis.text.x = element_text(size = presentation_labels_size),
+        axis.text.y = element_text(size = presentation_labels_size),
+        plot.margin = unit(c(ggarrange_margin_left,
+                             ggarrange_margin_right,
+                             ggarrange_margin_bottom,
+                             ggarrange_margin_left),
+                           "cm")) +
+  geom_rect(xmin = grey_background_xmin, 
+              xmax = grey_background_xmax,
+              ymin = grey_background_ymin, 
+              ymax = grey_background_ymax, 
+              fill = grey_background_fill, 
+              alpha = grey_background_alpha,
+              color = grey_background_color) +
+  geom_vline(xintercept = resource_flow_days,
+             linetype = resource_flow_line_type,
+             color = resource_flow_line_colour,
+             linewidth = resource_flow_line_width)
+
+# Save the plot in the same way you will save the following plots using ggarrange
+  
+ggpubr::ggarrange(p,
+                  align = "v",
+                  label.x = plot_label_x,
+                  label.y = plot_label_y) %>%
+  print()
+
+# Close the current graphics device to properly save the image
+
+dev.off()
+```
+
+```{r results = FALSE}
+
+# --- CREATE PLOTS LINE BY LINE --- #
+
+# Plot filled plots, adding to every plot a new line.
+
+for(i in 1:length(metaeco_type_n_connection_selected)) {
+  
+  # Generate the image where to save the plot
+  
+  pdf(file = here("..",
+                  "3_results",
+                  "figures",
+                  "presentations",
+                  paste0("metaecosystems_", 
+                         i, 
+                         ".pdf")),
+      width = presentation_figure_width_inches,
+      height = presentation_figure_height_inches)
+  
+  # Prepare data for plotting
+  
+  data_for_plotting = ds_metaecosystems %>%
+    filter(metaeco_type_n_connection %in% metaeco_type_n_connection_selected[1:i],
+           !is.na(!!sym(response_variable))) %>%
+    summarySE(measurevar = response_variable,
+              groupvars = c("day", "metaecosystem_type", "connection"))
+  
+  # Create plot
+  
+  p = data_for_plotting %>%
+    ggplot(aes(x = day,
+               y = get(response_variable),
+               group = interaction(day, metaecosystem_type, connection),
+               color = metaecosystem_type,
+               linetype = connection)) +
+    
+    # Points
+    
+    geom_point(stat = "summary",
+               fun = "mean",
+               position = position_dodge(dodging),
+               size = presentation_treatment_points_size) +
+    geom_errorbar(aes(ymax = get(response_variable) + ci,
+                      ymin = get(response_variable) - ci),
+                  width = width_errorbar,
+                  position = position_dodge(dodging)) +
+    
+    # Lines
+    
+    geom_line(stat = "summary",
+              fun = "mean",
+              aes(group = interaction(metaecosystem_type, connection)),
+              position = position_dodge(dodging),
+              linewidth = presentation_treatment_linewidth) +
+    scale_linetype_manual(values = treatment_linetypes) +
+    
+    # Axes & legend
+    
+    labs(x = axis_names$axis_name[axis_names$variable == "day"],
+         y = axis_names$axis_name[axis_names$variable == response_variable],
+         color = "") +
+    guides(color = "none", 
+           linetype = "none") + 
+    xlim(x_min, x_max) +
+    ylim(y_min, y_max) +
+    scale_x_continuous(breaks = unique(ds_metaecosystems$day)) +
+    scale_color_manual(values = treatment_colours) + 
+    guides(color = guide_legend(order = 1,
+                                title = NULL),
+           linetype = guide_legend(order = 2,
+                                   title = NULL)) +
+    
+    # Extra graphic elements
+    
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.position = "none",
+          legend.key.width = unit(legend_width_cm, "cm"),
+          axis.title.x = element_text(size = presentation_labels_size),
+          axis.title.y = element_text(size = presentation_labels_size),
+          axis.text.x = element_text(size = presentation_labels_size),
+          axis.text.y = element_text(size = presentation_labels_size)) +
+    geom_rect(xmin = grey_background_xmin,
+              xmax = grey_background_xmax,
+              ymin = grey_background_ymin,
+              ymax = grey_background_ymax,
+              fill = grey_background_fill,
+              alpha = grey_background_alpha,
+              color = grey_background_color) + 
+    geom_vline(xintercept = resource_flow_days,
+               linetype = resource_flow_line_type,
+               color = resource_flow_line_colour,
+               linewidth = resource_flow_line_width)
+  
+  # Save the plot in the same way you will save the following plots using ggarrange
+
+  ggpubr::ggarrange(p,
+                  align = "v",
+                  label.x = plot_label_x,
+                  label.y = plot_label_y) %>%
+  print()
+  
+  # Close the current graphics device to properly save the image
+  
+  dev.off()
+  
+  }
+```

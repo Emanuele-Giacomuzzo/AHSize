@@ -15,8 +15,8 @@ editor_options:
 response_variable_selected = "total_metaecosystem_bioarea_mm2"
 ```
 
-In the experiment we studied two-patch meta-ecosystems in which we manipulated the relative size of their patches (AD, ED, and HD) and their connection (unconnected vs connected). Now, we want to know whether meta-ecosystem patch size (here called meta-ecosystem type) influenced the effects of connection on this response variable. Therefore, we start by looking at how this response variable changed across time for all meta-ecosystems through its mean ± 95 confidence interval.
-
+<details  open = "open">
+<summary>Plot original data - means</summary>
 ```{r plot-original-data-metaecos}
 
 # --- PLOT ORIGINAL DATA --- #
@@ -25,25 +25,35 @@ plot.metaecos.points(ds_metaecosystems,
                      response_variable_selected,
                      3)
 ```
-
-<details>
-<summary>To read about how certain odd treatment means arose from the single replicates, click here.</summary>
-It seems like in the HD (HD) meta-ecosystems at t1, the unconnected treatment had more total biomass. This is wired, as it is before the first disturbance and therefore connections have not taken place yet. The reason why unconnected HD meta-ecosystems had more total biomass seems to be that one of the unconnected had a really productive heterotrophic ecosystem (ecosystem ID = 28). I checked the original video and I see no problem in it.
 </details>
 
- <br>
-
-Following the initial inspection, we proceed to analyse statistical differences among meta-ecosystems. Our first step involves filtering the data to isolate the relevant data for analysis. Specifically, we exclude data points where the response variable couldn't be computed, as well as time points preceding the initial disturbance and resource flow. Then we plot the data to make sure that data was filtered in the right way.
-
+<details>
+<summary>Prepare data for analysis</summary>
 ```{r prepare-data-for-analysis-metaecos}
 
 # --- PREPARE DATA FOR ANALYSIS --- #
 
+# Add baselines
+
+baselines = ds_metaecosystems %>%
+  filter(time_point == time_point_of_baselines) %>%
+  select(system_nr,
+         all_of(response_variable_selected)) %>%
+  rename(baseline = all_of(response_variable_selected))
+
 data_for_analysis = ds_metaecosystems %>%
+  left_join(baselines)
+
+# Filter
+
+data_for_analysis = data_for_analysis %>%
   filter(time_point %in% time_points_model,
          !is.na(!!sym(response_variable_selected)))
 ```
+</details>
 
+<details>
+<summary>Plot data for analysis - means</summary>
 ```{r plot-data-for-analysis-metaecos}
 
 # --- PLOT DATA FOR ANALYSIS --- #
@@ -52,9 +62,10 @@ plot.metaecos.points(data_for_analysis,
                      response_variable_selected,
                      3)
 ```
+</details>
 
- <br>
-
+<details>
+<summary>Compute model results</summary>
 ```{r define-nr-of-boostrap-iterations}
 
 # --- DEFINE NR OF BOOTSTRAP ITERATIONS --- #
@@ -62,18 +73,14 @@ plot.metaecos.points(data_for_analysis,
 bootstrap_iterations = 10
 ```
 
-Then, to examine how the interaction between meta-ecosystem type and connectivity influenced the response variable, we develop a mixed effect model (`full_model`) with lmerTest (Kuznetsova et al., 2017), treating system nr and time as random effects\
-(**Response variable \~ type \* connection + (1 \| system_nr) + (1 \| day)**, see [this link](https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf) for how to code). In this model we don't use a Restricted Maximum Likelihood (REML) because, while REML is robust to missing data, it may not perform well with very small sample sizes, especially when the number of random effects is large relative to the number of observations (ChatGPT). After having created the model, we show (i) the significance of the predictor variables through the summary of the model and (ii) the model residuals.
-
-Significance is tested by comparing their slope against zero using a t-test which employs the Satterthwaite's method to estimate the degrees of freedom for the two groups (fixed variable slope and zero). This method is conservative in order to prevent false positives (Li & Redden, 2015). An alternative method that could be used is the Kenward-Roger's method, however, it is expected to perform similarly. Because the model utilises Satterthwaite's method, it should entail a Welch t-test (according to information gleaned from [this Wikipedia page](https://en.wikipedia.org/wiki/Welch%E2%80%93Satterthwaite_equation)), which does not assume equal variance in the two groups. There is no option in this package to alter the type of t-test.
-
-In this model, disconnected meta-ecosystems are made of paired unconnected ecosystems, which are paired randomly. However, how to pair unconnected ecosystems can be done in multiple ways, as unconnected ecosystems did not interact and therefore any combination between ecosystems would be arbitrary. To make sure that the random combination we selected did not bias our results, we run `r bootstrap_iterations` possible combinations of ecosystems constituting unconnected meta-ecosystems and compute their p-values, creating a p-value distribution and keeping as the final p-value the mean of such distributions. Because explaining the reshuffling of ecosystems into different unconnected meta-ecosystems in the paper would be complex, we opted to present results for a single combination of unconnected ecosystems. Here, we provide a summary of the mixed effect model to illustrate the random effects.
-
-```{r compute-stats-for-all-ecosystem-combinations}
+```{r compute-stats-for-all-ecosystem-combinations, eval = recompute_metaeco_analysis}
 
 # --- COMPUTE STATS FOR ALL ECOSYSTEM COMBINATIONS --- #
 
-# If you see "Warning in (function (iprint = 0L, maxfun = 10000L, FtolAbs = 1e-05, FtolRel = ## 1e-15, : unused control arguments ignored", Ignore it. It just means that you didn't pass the control argument to the Nelder_Mead optimiser, so it uses the default.
+# If you see "Warning in (function (iprint = 0L, maxfun = 10000L, 
+# FtolAbs = 1e-05, FtolRel = ## 1e-15, : unused control arguments ignored", 
+# ignore it. It just means that you didn't pass the control argument to the 
+# Nelder_Mead optimiser, so it uses the default.
 
 # Initialise lists
 
@@ -82,68 +89,58 @@ coefficients = list()
 full_model = list()
 
 # Get the number of rows in the sets_of_sets data frame
+
 n_sets_of_sets = nrow(sets_of_sets)
 
 # Generate random sets of indices for bootstrap iterations
-random_sets_of_sets <- runif(bootstrap_iterations, 
+
+random_nrs <- runif(bootstrap_iterations, 
                               min = 1, 
                               max = n_sets_of_sets) %>% round()
 
 # Set the optimizer inputs for model fitting
+
 optimizer_input = "optimx"
 method_input = "L-BFGS-B"
 
 # Loop through each randomly selected set of sets
 
-for (i in 1:length(random_sets_of_sets)) {
-  
+for (i in 1:length(random_nrs)) {
+
   # Get the current set of sets based on the random index
-  sets = sets_of_sets[i,]
+  
+  sets = sets_of_sets[random_nrs[i],]
   
   # Identify system numbers that are unconnected based on the metaecosystem type
+  
   unconnected_system_nrs = unconnected_combinations_sets %>%
-    filter((metaeco_type_n_connection == "AD unconnected" & set == sets$autotrophic_dominated_set_n) |
-           (metaeco_type_n_connection == "ED unconnected" & set == sets$equally_dominated_set_n) |
-           (metaeco_type_n_connection == "HD unconnected" & set == sets$heterotrophic_dominated_set_n)) %>%
+    filter((metaeco_type_n_connection == "autotrophic-dominated unconnected" & 
+            set == sets$autotrophic_dominated_set_n) |
+           (metaeco_type_n_connection == "equally-dominated unconnected" & 
+            set == sets$equally_dominated_set_n) |
+           (metaeco_type_n_connection == "heterotrophic-dominated unconnected" & 
+            set == sets$heterotrophic_dominated_set_n)) %>%
     pull(system_nr)  # Extract system numbers from the filtered data
   
   # Filter the data for analysis based on connection status and unconnected systems
+  
   set_data_for_analysis[[i]] = data_for_analysis %>%
     filter(connection == "connected" | system_nr %in% unconnected_system_nrs)
   
   # Fit a generalized linear mixed model with a Tweedie distribution
   # This is a try. I changed the lmer model with a tweedie glmmtmb.
-  full_model[[i]] = glmmTMB::glmmTMB(get(response_variable_selected) ~
-                                            metaecosystem_type * connection +  # Model fixed effects
-                                            (1 | system_nr) +                  # Random effect for system number
-                                            (1 | day),                         # Random effect for day
-                                          data = set_data_for_analysis[[i]], # Data for the current set
-                                          REML = FALSE,                        # Use maximum likelihood estimation
-                                          family = glmmTMB::tweedie(link = "log")) # Tweedie family with log link
   
-  # Optionally, you could fit a linear mixed-effects model instead (commented out)
-  # full_model[[i]] = lmer(
-  #   get(response_variable_selected) ~
-  #     metaecosystem_type * connection +
-  #     (1 | system_nr) +
-  #     (1 | day),
-  #   data = set_data_for_analysis[[i]],
-  #   REML = FALSE,
-  #   control = lmerControl(optimizer = optimizer_input,
-  #                         optCtrl = list(method = method_input)))
+  full_model[[i]] = glmmTMB::glmmTMB(get(response_variable_selected) ~
+                                            metaecosystem_type * connection +  
+                                            (1 | day) +
+                                            (1 | baseline),                         
+                                          data = set_data_for_analysis[[i]], 
+                                          REML = FALSE,                        
+                                          family = glmmTMB::tweedie(link = "log"))
   
   # Extract and store the coefficients from the model summary
-  coefficients[[i]] = summary(full_model[[i]])[["coefficients"]]
   
-  # Optionally, fit a null model without fixed effects (commented out)
-  # null_model = lmer(
-  #   get(response_variable_selected) ~
-  #     (1 | system_nr) +
-  #     (1 | day),
-  #   data = set_data_for_analysis[[i]],
-  #   REML = FALSE,
-  #   control = lmerControl(optimizer = optimizer_input,
-  #                         optCtrl = list(method = method_input)))
+  coefficients[[i]] = summary(full_model[[i]])[["coefficients"]]
 }
 
 # Save the results
@@ -154,11 +151,11 @@ save(bootstrap_iterations,
                  "mixed_effect_models", 
                  "bootstrap_iterations.RData"))
 
-save(random_sets_of_sets,
+save(random_nrs,
      file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "random_sets_of_sets.RData"))
+                 "random_nrs.RData"))
 
 save(coefficients,
      file = here("..",
@@ -179,21 +176,17 @@ load(file = here("..",
 load(file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "random_sets_of_sets.RData"))
+                 "random_nrs.RData"))
 
 load(file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
                  "bootstrapped_coefficients_metaecosystem_biomass.RData"))
 ```
+</details>
 
-```{r model-summary-metaecos}
-
-# --- SHOW MODEL SUMMARY --- #
-
-print(summary(full_model[[1]]), digits = 3)
-```
-
+<details>
+<summary>Show single combination results</summary>
 ```{r model-residuals-metaecos}
 
 # --- SHOW MODEL RESIDUALS --- #
@@ -205,22 +198,20 @@ qqnorm(resid(full_model[[1]]))
 qqline(resid(full_model[[1]]))
 ```
 
- <br>
+```{r model-summary-metaecos}
 
-However, this model's output complicates understanding the fixed effects. To enhance clarity in demonstrating the statistical significance of fixed effects, we employ a type III ANOVA on the full model. This method accommodates unbalanced designs and yields the same results to type I ANOVA in balanced designs ([Uni Goettingen](https://md.psych.bio.uni-goettingen.de/mv/unit/lm_cat/lm_cat_unbal_ss_explained.html)). We utilise Satterthwaite's method to estimate the degrees of freedom for the two groups. But just knowing whether or not there is an effect is not enough. If there is an effect, we want to know which levels were different. Therefore, we proceed to analyse the contrasts among levels, ensuring that the P values go through a Tukey adjustment to account for the multiple comparisons (see [this link for contrast coding](https://aosmith.rbind.io/2019/04/15/custom-contrasts-emmeans/)).
+# --- SHOW MODEL SUMMARY --- #
 
- <br>
+print(summary(full_model[[1]]), digits = 3)
+```
 
 ```{r model-anova-metaecos}
 
 # --- SHOW MODEL ANOVA --- #
 
 anova_output = car::Anova(full_model[[1]], type = "III")
-anova_output
 ```
 
-<details>
-<summary>To see that the contrasts were coded in the right order click here.</summary>
 ```{r get-model-contrasts-metaecos}
 
 # --- GET MODEL CONSTRASTS --- #
@@ -245,13 +236,13 @@ HD_connected = c(0, 0, 0, 0, 0, 1)
 
 n_of_digits = 3
 contrasts = contrast(emmeans_output, 
-         method = list("AD connection effect" = AD_connected - AD_unconnected,
-                       "ED connection effect" = ED_connected - ED_unconnected,
-                       "HD connection effect" = HD_connected - HD_unconnected,
-                       "AD vs ED connected" = AD_connected - ED_connected,
-                       "HD vs ED connected" = HD_connected - ED_connected,
-                       "AD vs ED unconnected" = AD_unconnected - ED_unconnected,
-                       "HD vs ED unconnected" = HD_unconnected - ED_unconnected)) %>%
+         method = list("auto-dom connection effect" = AD_connected - AD_unconnected,
+                       "equally-dom connection effect" = ED_connected - ED_unconnected,
+                       "hetero-dom connection effect" = HD_connected - HD_unconnected,
+                       "auto- vs equally-dom connected" = AD_connected - ED_connected,
+                       "hetero- vs equally-dom connected" = HD_connected - ED_connected,
+                       "auto- vs equally-dom unconnected" = AD_unconnected - ED_unconnected,
+                       "hetero- vs equally-dom unconnected" = HD_unconnected - ED_unconnected)) %>%
   as.data.frame() %>%
   mutate(p.value = round(p.value, digits = n_of_digits),
          estimate = round(estimate, digits = n_of_digits),
@@ -275,23 +266,19 @@ contrasts = contrast(emmeans_output,
 ```
 </details>
 
+<details  open = "open">
+<summary>Show single combination ANOVA & contrasts</summary>
 ```{r show-model-contrasts-metaecos}
 
-# --- SHOW MODEL CONTRASTS --- #
+# --- SHOW MODEL RESULTS FOR A SINGLE COMBINATIONS --- #
 
+anova_output
 contrasts
 ```
-
- <br>
+</details>
 
 <details>
-
-<summary>To make sure that the bootstrapping results match the single combination results, click here.</summary>
-
- <br>
-
-To recap, we bootstrapped `r bootstrap_iterations` random sets of unconnected meta-ecosystems which we compared to all the connected meta-ecosystems. We here show which sets were used, the results of ANOVA, and the results of the contrasts.
-
+<summary>Show all combinations results</summary>
 ```{r}
 
 # --- SHOW WHICH RANDOM SETS OF SETS HAVE BOOTSTRAPPED --- #
@@ -299,7 +286,7 @@ To recap, we bootstrapped `r bootstrap_iterations` random sets of unconnected me
 # Show to make sure that there's no bias in which ecosystem combinations have
 # been combined. 
 
-hist(random_sets_of_sets,
+hist(random_nrs,
      main = "Random sets of sets used for bootrapping")
 ```
 
@@ -315,7 +302,7 @@ contrasts = list()
 
 # Loop through the sets of sets to calculate their contrasts
 
-for (i in 1:length(random_sets_of_sets)){
+for (i in 1:length(random_nrs)){
   
   # Perform ANOVA
   
@@ -345,11 +332,13 @@ for (i in 1:length(random_sets_of_sets)){
   HD_connected = c(0, 0, 0, 0, 0, 1)
   
   contrasts[[i]] = contrast(emmeans_output[[i]], 
-                       method = list("AD connection effect" = AD_connected - AD_unconnected,
-                                     "ED connection effect" = ED_connected - ED_unconnected,
-                                     "HD connection effect" = HD_connected - HD_unconnected,
-                                     "AD vs ED connected" = AD_connected - ED_connected,
-                                     "HD vs ED connected" = ED_connected - HD_connected)) %>%
+                       method = list("auto-dom connection effect" = AD_connected - AD_unconnected,
+                                     "equally-dom connection effect" = ED_connected - ED_unconnected,
+                                     "hetero-dom connection effect" = HD_connected - HD_unconnected,
+                                     "auto- vs equally-dom connected" = AD_connected - ED_connected,
+                                     "heterotrophic- vs equally-dom connected" = HD_connected - ED_connected,
+                                     "auto- vs equally-dom unconnected" = AD_unconnected - ED_unconnected,
+                                     "heterotrophic- vs equally-dom unconnected" = HD_unconnected - ED_unconnected)) %>%
     as.data.frame() 
   
   contrast_levels = contrasts[[i]]$contrast
@@ -359,7 +348,7 @@ for (i in 1:length(random_sets_of_sets)){
 
 # Average ANOVA across sets of sets 
 
-do.call(rbind, ANOVA_output) %>%
+ANOVA = do.call(rbind, ANOVA_output) %>%
   group_by(variable) %>%
   summarise(Chisq = round(mean(Chisq), digits = 1),
             Df = round(mean(Df), digits = 1),
@@ -372,7 +361,7 @@ do.call(rbind, ANOVA_output) %>%
 
 # Average the contrasts across sets of sets 
 
-do.call(rbind, contrasts) %>%
+contrasts = do.call(rbind, contrasts) %>%
   group_by(contrast) %>%
   summarise(estimate = round(mean(estimate), digits = 1),
             SE = round(mean(SE), digits = 1),
@@ -380,14 +369,24 @@ do.call(rbind, contrasts) %>%
             z.ratio = round(mean(z.ratio), digits = 2),
             p.value = round(mean(p.value), digits = 4)) %>%
   mutate(contrast = factor(contrast,
-                           levels = c("AD connection effect",
-                                     "ED connection effect",
-                                     "HD connection effect",
-                                     "AD vs ED connected",
-                                     "HD vs ED connected"))) %>%
+                           levels = c("auto-dom connection effect",
+                                     "equally-dom connection effect",
+                                     "hetero-dom connection effect",
+                                     "auto- vs equally-dom connected",
+                                     "hetero- vs equally-dom connected",
+                                     "auto- vs equally-dom unconnected",
+                                     "hetero- vs equally-dom unconnected"))) %>%
   arrange(contrast)
 ```
-
 </details>
 
- <br>
+<details>
+<summary>Show all combinations ANOVA & contrasts</summary>
+```{r}
+
+# --- SHOW MODEL RESULTS FOR ALL COMBINATIONS --- #
+
+ANOVA
+contrasts
+```
+</details>

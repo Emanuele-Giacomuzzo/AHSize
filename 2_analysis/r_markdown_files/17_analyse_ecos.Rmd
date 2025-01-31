@@ -6,36 +6,55 @@ editor_options:
   chunk_output_type: console
 ---
 
-In our experiment, we manipulated meta-ecosystems consisting of autotrophic and heterotrophic patches, varying the relative size of these patches (referred to as meta-ecosystem types AD, ED, and HD) and their connectivity (unconnected versus connected). Now, we want to know whether, at the local ecosystem level, the connectivity of the ecosystem interacted with ecosystem size to affect this specific response variable. Essentially, we are interested in understanding if ecosystem size modulated the impact of spatial feedback locally. To begin, we plot how this response variable varied across different treatments throughout the experiment, represented by mean values with a 95% confidence interval.
-
+<details  open = "open">
+<summary>Plot original data - means</summary>
 ```{r}
-plot.ecosystems.points(ds_ecosystems %>% 
-                         filter(trophic_type == trophy_selected),
-                       response_variable,
-                       legend_row_n_input = 3)
+
+# --- PLOT ORIGINAL DATA WITH MEANS --- #
+
+plot = plot.ecosystems.points(ds_ecosystems %>% 
+                                filter(trophic_type == trophy_selected),
+                              response_variable_selected,
+                              legend_row_n_input = 3)
+plot
 ```
-
-<details>
-
-<summary>To view how the means of each treatment were calculated from the single replicates, click here.</summary>
-
-```{r}
-plot.ecosystems.replicates.one.by.one(ds_ecosystems,
-                                      ecosystem_size_and_trophy_selected,
-                                      response_variable)
-```
-
 </details>
 
- <br>
-
-Following this initial inspection, we proceed to analyse differences among ecosystems. Our first step involves filtering the data to isolate the relevant data for analysis. Specifically, we exclude data points where the response variable couldn't be computed, as well as time points preceding the initial disturbance and resource flow. Then we plot the data to make sure that what filtered the data in the right way.
-
+<details>
+<summary>Plot original data - replicates</summary>
 ```{r}
-filtered_data = ds_ecosystems %>%
+
+# --- PLOT ORIGINAL DATA WITH SINGLE REPLICATES --- #
+
+plot.ecosystems.replicates.one.by.one(ds_ecosystems,
+                                      ecosystem_size_and_trophy_selected,
+                                      response_variable_selected)
+```
+</details>
+
+<details>
+<summary>Prepare data for analysis</summary>
+```{r}
+
+# --- PREPARE DATA FOR ANALYSIS --- #
+
+# Add baselines
+
+baselines = ds_ecosystems %>%
+  filter(time_point == time_point_of_baselines) %>%
+  select(ecosystem_ID,
+         all_of(response_variable_selected)) %>%
+  rename(baseline = all_of(response_variable_selected))
+
+data_for_analysis = ds_ecosystems %>%
+  left_join(baselines)
+
+# Filter data
+
+data_for_analysis = data_for_analysis %>%
   filter(trophic_type == trophy_selected,
          time_point %in% time_points_model,
-         !is.na(!!sym(response_variable))) %>%
+         !is.na(!!sym(response_variable_selected))) %>%
   mutate(ecosystem_ID = as.character(ecosystem_ID),
          size = NA,
          size = case_when(ecosystem_size == "Small" ~ "S",
@@ -45,84 +64,119 @@ filtered_data = ds_ecosystems %>%
          size = factor(size, levels = c("S", "M", "L")),
          size = as.character(size))
 ```
-
-```{r}
-plot.ecosystems.points(filtered_data,
-                       response_variable,
-                       legend_row_n_input = 3)
-```
+</details>
 
 <details>
-
-<summary>To view how treatment means arose from the single replicates, click here.</summary>
-
+<summary>Plot data for analysis - means</summary>
 ```{r}
-plot.ecosystems.replicates.one.by.one(filtered_data,
-                                      ecosystem_size_and_trophy_selected,
-                                      response_variable)
+
+# --- PLOT DATA FOR ANALYSIS WITH MEANS --- #
+
+plot.ecosystems.points(data_for_analysis,
+                       response_variable_selected,
+                       legend_row_n_input = 3)
 ```
 </details>
 
-<br>
+<details>
+<summary>Plot data for analysis - replicates</summary>
+```{r}
 
-```{r eval = (response_variable %in% c("species_richness", "shannon", "evenness_pielou"))}
+# --- PLOT DATA FOR ANALYSIS WITH SINGLE REPLICATES --- #
 
-## - Create mixed effect model - ##
-# In the ouput lmerModLmerTest which means that it's a Linear Mixed Model from the lmerTest package
+plot.ecosystems.replicates.one.by.one(data_for_analysis,
+                                      ecosystem_size_and_trophy_selected,
+                                      response_variable_selected)
+```
+</details>
 
-if((response_variable %in% c("bioarea_mm2_per_ml", "indiv_per_ml", "median_body_size_µm2")) == FALSE){
+<details>
+<summary>Compute model results</summary>
+
+```{r}
+
+# --- DEFINE FORMULA --- #
+
+formula = paste("get(response_variable_selected) ~",
+                "size * connection +",
+                "(1 | baseline) +",
+                "(1 | day)") %>%
+  print()
+
+formula = as.formula(formula)
+```
+
+```{r eval = (distribution_selected == "gaussian"), echo = (distribution_selected == "gaussian")}
+
+# --- CREATE MODEL (WITH NORMAL DISTRIBUTION) --- #
   
- model = lmer(get(response_variable) ~
-               size * connection +
-               (1 | ecosystem_ID) +
-               (1 | day),
-             data = filtered_data,
+ model = lmer(formula,
+             data = data_for_analysis,
              REML = FALSE,
              control = lmerControl(optimizer = "Nelder_Mead"))
- 
+```
+
+```{r eval = (distribution_selected == "tweedie"), echo = (distribution_selected == "tweedie")}
+
+# --- CREATE MODEL (WITH TWEEDIE DISTRIBUTION) --- #
+
+
+if(trophy_selected != "heterotrophic" && response_variable_selected != "median_body_size_µm2"){
+  
+
+  model <- glmmTMB::glmmTMB(formula,
+                            data = data_for_analysis,
+                            family = glmmTMB::tweedie(link = "log"))
+}
+
+if(trophy_selected == "heterotrophic" && response_variable_selected == "median_body_size_µm2"){
+  
+ model <- glmmTMB(formula,
+                  data = data_for_analysis,
+                  family = glmmTMB::tweedie(link = "log"),
+                  control = glmmTMBControl(optimizer = optim, 
+                                           optArgs = list(method = "BFGS"))) 
 }
 ```
 
-```{r eval = (response_variable %in% c("bioarea_mm2_per_ml", "indiv_per_ml", "median_body_size_µm2"))}
-
-## - Create mixed effect model - ##
-
-model <- glmmTMB::glmmTMB(get(response_variable) ~
-                            size * connection +
-                            (1 | ecosystem_ID) +
-                            (1 | day),
-                          data = filtered_data,
-                          family = glmmTMB::tweedie(link = "log"))
-```
-
 ```{r}
 
-## - Show summary of the model -- ##
-
-print(summary(model), digits = 3)
-```
-
-```{r}
-
-## - Plot residuals of the model -- ##
+# --- PLOT RESIDUALS --- #
 
 qqnorm(resid(model))
 qqline(resid(model))
 
 create.res.vs.fit.ecosystems(model,
-                             filtered_data)
+                             data_for_analysis)
 ```
 
 ```{r}
 
-## - Perform Type III ANOVA on the model - ##
+# --- SHOW MODEL SUMMARY --- #
 
-car::Anova(model, type = "III")
+print(summary(model), digits = 3)
+```
+
+
+```{r eval = (distribution_selected == "gaussian"), echo = (distribution_selected == "gaussian")}
+
+# --- PERFORM ANOVA (GAUSSIAN) --- #
+
+ANOVA = anova(model) %>%
+  print()
+```
+
+```{r eval = (distribution_selected == "tweedie"), echo = (distribution_selected == "tweedie")}
+
+# --- PERFORM ANOVA --- #
+
+ANOVA = car::Anova(model, type = "III") %>%
+  print()
 ```
 
 ```{r}
 
-## - Analyse the contrasts among levels -- ##
+# --- ESTIMATE MARGINAL MEANS --- #
 
 emmeans_output = emmeans(model,
                          specs = pairwise ~ size:connection,
@@ -131,9 +185,10 @@ emmeans_output = emmeans(model,
                          lmer.df = "satterthwaite")
 ```
 
-<details>
-<summary>Show how the contrasts were coded</summary>
 ```{r class.source = 'fold-show'}
+
+# --- CODE THE CONTRAST LEVELS --- #
+
 emmeans_output
 
 L_unconnected = c(1, 0, 0, 0, 0, 0)
@@ -143,11 +198,10 @@ L_connected = c(0, 0, 0, 1, 0, 0)
 M_connected = c(0, 0, 0, 0, 1, 0)
 S_connected = c(0, 0, 0, 0, 0, 1)
 ```
-</details>
 
-```{r eval = (response_variable %in% c("species_richness", "shannon", "evenness_pielou"))}
+```{r eval = (response_variable_selected %in% c("species_richness", "shannon", "evenness_pielou"))}
 
-## - Show only the contrasts you are interested in -- ##
+# --- CALCULATE CONTRASTS YOU ARE INTERESTED IN (T-RATIO, USED FOR RESPONSE VARIABLES WITH NORMAL DISTRIBUTION)--- #
 
 n_of_digits = 3
 contrasts = contrast(emmeans_output, 
@@ -178,13 +232,11 @@ contrasts = contrast(emmeans_output,
                            "***",
                            e)) %>%
   rename(" " = e)
-
-contrasts
 ```
 
-```{r eval = (response_variable %in% c("bioarea_mm2_per_ml", "indiv_per_ml", "median_body_size_µm2"))}
+```{r eval = (response_variable_selected %in% c("bioarea_mm2_per_ml", "indiv_per_ml", "median_body_size_µm2"))}
 
-## - Show only the contrasts you are interested in -- ##
+# --- CALCULATE CONTRASTS YOU ARE INTERESTED IN (Z RATIO, USED FOR REPONSE VARIABLES WITH TWEEDIE DISRIBUTION) --- #
 
 n_of_digits = 3
 contrasts = contrast(emmeans_output, 
@@ -215,6 +267,16 @@ contrasts = contrast(emmeans_output,
                            "***",
                            e)) %>%
   rename(" " = e)
+```
+</details>
 
+<details open = "open">
+<summary>Show results</summary>
+```{r}
+
+# --- SHOW RESULTS --- #
+
+ANOVA
 contrasts
 ```
+</details>

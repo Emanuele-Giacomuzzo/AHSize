@@ -16,6 +16,7 @@ knitr::opts_chunk$set(message = FALSE,
                       autodep = FALSE)
 start_time = Sys.time()
 recompute_lengthy_analyses = FALSE
+recompute_metaeco_analysis = TRUE
 ```
 
 ```{r bemovi-parameters}
@@ -180,17 +181,17 @@ ecosystem_info = read.csv(here("..",
                  "connected")),
     metaecosystem = NULL,
     metaecosystem_type = case_when(
-           ecosystem_size_and_trophy == "Large heterotrophic" ~ "HD",
-           ecosystem_size_and_trophy == "Small autotrophic" ~ "HD",
-           ecosystem_size_and_trophy == "Large autotrophic" ~ "AD",
-           ecosystem_size_and_trophy == "Small heterotrophic" ~ "AD",
-           ecosystem_size_and_trophy == "Medium autotrophic" ~ "ED",
-           ecosystem_size_and_trophy == "Medium heterotrophic" ~ "ED",
+           ecosystem_size_and_trophy == "Large heterotrophic" ~ "heterotrophic-dominated",
+           ecosystem_size_and_trophy == "Small autotrophic" ~ "heterotrophic-dominated",
+           ecosystem_size_and_trophy == "Large autotrophic" ~ "autotrophic-dominated",
+           ecosystem_size_and_trophy == "Small heterotrophic" ~ "autotrophic-dominated",
+           ecosystem_size_and_trophy == "Medium autotrophic" ~ "equally-dominated",
+           ecosystem_size_and_trophy == "Medium heterotrophic" ~ "equally-dominated",
            TRUE ~ metaecosystem_type),
     metaecosystem_type = factor(metaecosystem_type,
-                                levels = c("AD",
-                                           "ED", 
-                                           "HD")),
+                                levels = c("autotrophic-dominated",
+                                           "equally-dominated", 
+                                           "heterotrophic-dominated")),
     metaeco_type_n_connection = if_else(
       !is.na(metaecosystem_type),  # Check if metaecosystem_type is not NA
       paste(metaecosystem_type, connection),  # Combine if not NA
@@ -282,12 +283,12 @@ n_metaecosystems = length(system_nr_metaecosystems)
 
 # Define the treatments and controls
 
-treatments_and_controls_metaecos = data.frame(treatment = c("HD connected",
-                                                            "AD connected",
-                                                            "ED connected"),
-                                              control = c("HD unconnected",
-                                                          "AD unconnected",
-                                                          "ED unconnected"))
+treatments_and_controls_metaecos = data.frame(treatment = c("heterotrophic-dominated connected",
+                                                            "autotrophic-dominated connected",
+                                                            "equally-dominated connected"),
+                                              control = c("heterotrophic-dominated unconnected",
+                                                          "autotrophic-dominated unconnected",
+                                                          "equally-dominated unconnected"))
 
 n_treatments_metaecos = length(unique(treatments_and_controls_metaecos$treatment))
 n_controls_metaecos = length(unique(treatments_and_controls_metaecos$control))
@@ -299,16 +300,16 @@ n_controls_metaecos = length(unique(treatments_and_controls_metaecos$control))
 
 # Set line colours 
 
-treatment_colours = c("AD" = "#5ab4ac",
-                      "ED" = "#969696",
-                      "HD" = "#d8b365",
+treatment_colours = c("autotrophic-dominated" = "#5ab4ac",
+                      "equally-dominated" = "#969696",
+                      "heterotrophic-dominated" = "#d8b365",
                       
-                      "HD connected" = "#CB4335",
-                      "AD connected" = "#6C3483",
-                      "ED connected" = "black",
-                      "HD unconnected" = "#CB4335",
-                      "AD unconnected" = "#6C3483",
-                      "ED unconnected" = "black",
+                      "heterotrophic-dominated connected" = "#CB4335",
+                      "autotrophic-dominated connected" = "#6C3483",
+                      "equally-dominated connected" = "black",
+                      "heterotrophic-dominated unconnected" = "#CB4335",
+                      "autotrophic-dominated unconnected" = "#6C3483",
+                      "equally-dominated unconnected" = "black",
                       
                       "Small heterotrophic" = "#c6dbef",
                       "Medium heterotrophic" = "#3182bd",
@@ -385,24 +386,33 @@ ggarrange_margin_right = 0
 
 # Set parameters of the figures saved for the paper
 
-paper_width = 17.3
-paper_height = 20
+cm_to_inches = 0.393701
+
+paper_width_cm = 17.3
+paper_height_cm = 20
+paper_width_inches = paper_width_cm * cm_to_inches
+paper_height_inches = paper_height_cm * cm_to_inches
+
 paper_units = "cm"
 paper_res = 600
 paper_labels_size = 12
+paper_format = "pdf"
 
 # Set parameters of the figures saved for presentations
 
-presentation_figure_size = 15
-presentation_figure_width = 30
-presentation_figure_height = 22
+presentation_figure_size_cm = 15
+presentation_figure_width_cm = 30
+presentation_figure_height_cm = 22
+
+presentation_figure_size_inches = presentation_figure_size_cm * cm_to_inches
+presentation_figure_width_inches = presentation_figure_width_cm * cm_to_inches
+presentation_figure_height_inches = presentation_figure_height_cm * cm_to_inches
+
 presentation_labels_size = 24
 presentation_x_axis_size = 20
 presentation_y_axis_size = presentation_x_axis_size
 presentation_treatment_points_size = 5
 presentation_treatment_linewidth = 2
-presentation_figure_units = "cm"
-presentation_figure_res = 600
 
 # Set parameters for the grey background used to show the time points excluded from the analysis
 
@@ -427,7 +437,7 @@ axis_names = data.frame(variable = NA,
   
   add_row(variable = "total_metaecosystem_bioarea_mm2", axis_name = "Total Biomass (mm2)") %>%
   
-  add_row(variable = "bioarea_mm2_per_ml", axis_name = "Biomass (mm2/ml)") %>%
+  add_row(variable = "bioarea_mm2_per_ml", axis_name = "Biomass Density (mm2/ml)") %>%
   add_row(variable = "bioarea_mm2_per_ml_d", axis_name = "Effect Size of Bioarea Density") %>%
   
   add_row(variable = "log10_bioarea_mm2_per_ml", axis_name = "Log10 Biomass (mm2/ml)") %>%
@@ -514,6 +524,7 @@ axis_names = data.frame(variable = NA,
 # Decide which time points you want to include in the analysis. We chose the 
 # first time point as 2 because it's after the first disturbance.
 
+time_point_of_baselines = 1
 time_points_model = 2:4 
 
 # Decide optimizers for mixed effect models
