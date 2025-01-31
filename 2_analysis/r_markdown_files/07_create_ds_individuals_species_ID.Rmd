@@ -16,7 +16,7 @@ editor_options:
 
 training_thresh_13 = read.csv(here("..",
                                    "1_data",
-                                   "13_threshold_analysis_training.csv")) %>%
+                                   "traning_threshold_13.csv")) %>%
   
   # To make it easier to handle the level, transform Spi te into Spi_te. 
   
@@ -39,7 +39,7 @@ training_thresh_13 = read.csv(here("..",
 
 training_thresh_40 = read.csv(here("..",
                                    "1_data",
-                                   "40_threshold_analysis_training.csv")) %>%
+                                   "traning_threshold_40.csv")) %>%
   
   # To tidy up, reorder columns.
   
