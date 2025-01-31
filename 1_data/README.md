@@ -30,6 +30,7 @@ The columns in the ecosystems_info file represent the following (this file uses 
 
 
 # Content of the folder
+- ecosystem_info.csv: Information about the ecosystems
 - t0.csv: Analysis of cultures at time point 0
 - t1.csv: Analysis of cultures at time point 1
 - t2.csv: Analysis of cultures at time point 2
