@@ -3,5 +3,5 @@
 .RData
 .Ruserdata
 .gitattributes
-.DS_Store
+**/.DS_Store
 0_thrash/
