@@ -1,3 +1,35 @@
+# How this data was produced
+
+This repository contains the experimental data on morphology and movement of protist species.
+
+## Training data
+
+To be able to then identify protist species in the experiment, prior to the main experiment we filmed at least 100 individuals for each protist species. The analysis of these footages was performed using the BEMOVI R package (based on ImageJ) to extract morphological and behavioral characteristics. We implemented two different intensity thresholds for image analysis:
+- A lower pixel intensity threshold of 13 was used for most protist species
+- A lower pixel intensity threshold of 40 was used for Blepharisma sp. to distinguish it from the prey species it was kept with in monocultures
+
+## Time point (t0-4) data
+We subsequently filmed ecosystem samples at five distinct time points (t0-t4) using BEMOVI software. A threshold of 13 was selected as the optimal setting for capturing protist characteristics while minimizing background noise.
+
+# Content of the folder 
+- 13_threshold_analysis_t0.csv: Analysis of cultures at initial time point (t0)
+- 13_threshold_analysis_t1.csv: Analysis of cultures at time point 1
+- 13_threshold_analysis_t2.csv: Analysis of cultures at time point 2
+- 13_threshold_analysis_t3.csv: Analysis of cultures at time point 3
+- 13_threshold_analysis_t4.csv: Analysis of cultures at final time point (t4)
+- 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower threshold
+- 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower threshold
+
+# Summary of how to assemble the data
+
+1.  **Assemble a dataset with the individuals.** Keep the individuals from the output with a lower intensity threshold 13 (individuals_13_threshold). This lower intensity threshold does not exclude any protist species, providing a more comprehensive view of all the individuals. Bind this data with 'ecosystems_info.csv'.
+2.  **Assemble a dataset with the ecosystems.** Keep the biomass and total individuals of each ecosystem from the output with a lower intensity threshold 13 (ecosystems_13_threshold). This lower intensity threshold does not exclude any protist species, providing a more comprehensive view of ecosystem biomass and the total number of individuals. Bind it then with the species densities of the species densities of *Colpidium sp.*, *Euglena gracilis*, *Euplotes aediculatus*, *Loxocephalus sp.*, *Paramecium aurelia*, *Paramecium caudatum*, *Spirostomum teres*, and *Tetrahymena cf. pyriformis* obtained from data analysis with lower intensity threshold set to 13 (species_ID_13_threshold) and *Blepharisma sp.*, *Cephalodella sp.*, and *Spirostomum sp.* obtained from data analysis with lower intensity threshold set to 40 (species_ID_40_threshold). Bind this data with 'ecosystems_info.csv'.
+
+
+
+
+# OLD
+
 # How this data was produced and how to assemble it
 
 This folder contains the data obtained from the microcosm experiment. Two lowest threshold levels of pixel intensities were used to differentiate between individuals and the background using ImageJ (herein referred to simply as "thresholds") because different protist species were better identified at different thresholds. Specifically, *Colpidium sp.*, *Euglena gracilis*, *Euplotes aediculatus*, *Loxocephalus sp.*, *Paramecium aurelia*, *Paramecium caudatum*, *Spirostomum teres*, and *Tetrahymena cf. pyriformis* were identified with a lower threshold of 13 while *Blepharisma sp.*, *Cephalodella sp.*, and *Spirostomum sp.* were identified with a lower threshold of 40. Data was obtained from video files through the following steps. First, we used the script in 2_r_files \> video_analysis to analyze videos at all time points and training data with threshold set to 13 (thresholds \<- c(13, 255)) and save the results in 1_data. Second, we repeated adjusting the threshold to 40 (thresholds \<- c(40, 255)). To assemble the data, see how we did it in master.html.
