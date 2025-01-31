@@ -5,6 +5,9 @@ The connection between autotrophic and heterotrophic ecosystems (e.g., the conne
 ## Content of the repository
 
 1_data: Data files obtained from analysing the culture videos with the R package BEMOVI
+
 2_analysis: R files to analyse the data
+
 3_results: Results saved during the analysis
+
 4_other: Other files
