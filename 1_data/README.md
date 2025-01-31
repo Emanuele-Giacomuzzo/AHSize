@@ -1,3 +1,23 @@
+# 
+
+This repository contains the experimental data on morphology and movement of protist species.
+
+## Training data
+
+To be able to then identify protist species in the experiment, prior to the main experiment we filmed at least 100 individuals for each protist species. The analysis of these footages was performed using the BEMOVI R package (based on ImageJ) to extract morphological and behavioral characteristics. We implemented two different intensity thresholds for image analysis:
+- A threshold of 13 was used for most protist species
+- A threshold of 40 was used for Blepharisma sp. to distinguish it from the prey species it was kept with in monocultures
+
+Files:
+- 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower intensity threshold
+- 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower intensity threshold
+
+
+
+
+
+# OLD
+
 # How this data was produced and how to assemble it
 
 This folder contains the data obtained from the microcosm experiment. Two lowest threshold levels of pixel intensities were used to differentiate between individuals and the background using ImageJ (herein referred to simply as "thresholds") because different protist species were better identified at different thresholds. Specifically, *Colpidium sp.*, *Euglena gracilis*, *Euplotes aediculatus*, *Loxocephalus sp.*, *Paramecium aurelia*, *Paramecium caudatum*, *Spirostomum teres*, and *Tetrahymena cf. pyriformis* were identified with a lower threshold of 13 while *Blepharisma sp.*, *Cephalodella sp.*, and *Spirostomum sp.* were identified with a lower threshold of 40. Data was obtained from video files through the following steps. First, we used the script in 2_r_files \> video_analysis to analyze videos at all time points and training data with threshold set to 13 (thresholds \<- c(13, 255)) and save the results in 1_data. Second, we repeated adjusting the threshold to 40 (thresholds \<- c(40, 255)). To assemble the data, see how we did it in master.html.
