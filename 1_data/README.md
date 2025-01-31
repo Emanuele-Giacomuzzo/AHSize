@@ -1,4 +1,4 @@
-# Experimental data
+# How this data was produced
 
 This repository contains the experimental data on morphology and movement of protist species.
 
@@ -20,6 +20,12 @@ We subsequently filmed ecosystem samples at five distinct time points (t0-t4) us
 - 13_threshold_analysis_t4.csv: Analysis of cultures at final time point (t4)
 - 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower threshold
 - 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower threshold
+
+# Summary of how to assemble the data
+
+1.  **Assemble a dataset with the individuals.** Keep the individuals from the output with a lower intensity threshold 13 (individuals_13_threshold). This lower intensity threshold does not exclude any protist species, providing a more comprehensive view of all the individuals. Bind this data with 'ecosystems_info.csv'.
+2.  **Assemble a dataset with the ecosystems.** Keep the biomass and total individuals of each ecosystem from the output with a lower intensity threshold 13 (ecosystems_13_threshold). This lower intensity threshold does not exclude any protist species, providing a more comprehensive view of ecosystem biomass and the total number of individuals. Bind it then with the species densities of the species densities of *Colpidium sp.*, *Euglena gracilis*, *Euplotes aediculatus*, *Loxocephalus sp.*, *Paramecium aurelia*, *Paramecium caudatum*, *Spirostomum teres*, and *Tetrahymena cf. pyriformis* obtained from data analysis with lower intensity threshold set to 13 (species_ID_13_threshold) and *Blepharisma sp.*, *Cephalodella sp.*, and *Spirostomum sp.* obtained from data analysis with lower intensity threshold set to 40 (species_ID_40_threshold). Bind this data with 'ecosystems_info.csv'.
+
 
 
 
