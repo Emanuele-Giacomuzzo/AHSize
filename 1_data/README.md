@@ -8,7 +8,7 @@ To be able to then identify protist species in the experiment, prior to the main
 - A lower pixel intensity threshold of 13 was used for most protist species
 - A lower pixel intensity threshold of 40 was used for Blepharisma sp. to distinguish it from the prey species it was kept with in monocultures
 
-## Ecosystem Time Series Analysis
+## Time point (t0-4) data
 We subsequently filmed ecosystem samples at five distinct time points (t0-t4) using BEMOVI software. A threshold of 13 was selected as the optimal setting for capturing protist characteristics while minimizing background noise.
 
 
