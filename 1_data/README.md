@@ -8,11 +8,11 @@ To be able to then identify protist species in the experiment, prior to the main
 - A lower pixel intensity threshold of 13 was used for most protist species
 - A lower pixel intensity threshold of 40 was used for Blepharisma sp. to distinguish it from the prey species it was kept with in monocultures
 
-Files:
+## Content of the folder 
 - 13_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 13 lower threshold
 - 40_threshold_analysis_training.csv: Morphology and behavior data for monocultures analysed at the 40 lower threshold
 
-
+==AA==
 
 
 
