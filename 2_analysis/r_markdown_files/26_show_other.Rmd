@@ -54,8 +54,8 @@ ds_metaecosystems %>%
 
 save.image(file = here("..",
                        "3_results", 
-                       "environments", 
-                       "environment_at_the_of_knitting.RData"))
+                       "R_environments", 
+                       "R_environment_at_the_of_knitting.RData"))
 ```
 
 ### Create circles for design figure

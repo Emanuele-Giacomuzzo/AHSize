@@ -149,19 +149,19 @@ save(bootstrap_iterations,
      file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "bootstrap_iterations.RData"))
+                 "metaeco_analysis_n_of_bootstrap_iterations.RData"))
 
 save(random_nrs,
      file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "random_nrs.RData"))
+                 "metaeco_analysis_bootstrapped_sets_of_sets.RData"))
 
 save(coefficients,
      file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "bootstrapped_coefficients_metaecosystem_biomass.RData"))
+                 "metaeco_analysis_bootstrapped_model_coefficients.RData"))
 ```
 
 ```{r load-results}
@@ -171,17 +171,17 @@ save(coefficients,
 load(file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "bootstrap_iterations.RData"))
+                 "metaeco_analysis_n_of_bootstrap_iterations.RData"))
 
 load(file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "random_nrs.RData"))
+                 "metaeco_analysis_bootstrapped_sets_of_sets.RData"))
 
 load(file = here("..",
                  "3_results", 
                  "mixed_effect_models", 
-                 "bootstrapped_coefficients_metaecosystem_biomass.RData"))
+                 "metaeco_analysis_bootstrapped_model_coefficients.RData"))
 ```
 </details>
 

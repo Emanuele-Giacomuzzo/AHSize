@@ -187,16 +187,6 @@ response_variable_selected = "shannon"
 distribution_selected = "gaussian"
 ```
 
-```{r echo=FALSE, message=FALSE}
-
-# --- SAVE ENVIRONMENT --- #
-
-save.image(file = here("..",
-                       "3_results", 
-                       "environments", 
-                       "before.RData"))
-```
-
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
 ```
 
