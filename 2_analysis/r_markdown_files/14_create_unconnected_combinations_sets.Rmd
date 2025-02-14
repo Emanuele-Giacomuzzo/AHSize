@@ -91,14 +91,14 @@ create.unconnected.sets = function(metaeco_type_n_connection_selected,
 
 unconnected_combinations_sets = rbind(
   create.unconnected.sets("autotrophic-dominated unconnected",
-                          "Small heterotrophic unconnected",
-                          "Large autotrophic unconnected"),
+                          "small heterotrophic unconnected",
+                          "large autotrophic unconnected"),
   create.unconnected.sets("heterotrophic-dominated unconnected",
-                          "Large heterotrophic unconnected",
-                          "Small autotrophic unconnected"),
+                          "large heterotrophic unconnected",
+                          "small autotrophic unconnected"),
   create.unconnected.sets("equally-dominated unconnected",
-                          "Medium heterotrophic unconnected",
-                          "Medium autotrophic unconnected"))
+                          "medium heterotrophic unconnected",
+                          "medium autotrophic unconnected"))
 ```
 
 ```{r}

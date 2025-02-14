@@ -133,46 +133,46 @@ ecosystem_info = read.csv(here("..",
     # To have levels that are easier to read, transform them. 
     
     ecosystem_type = case_when(
-           ecosystem_type == "Sa" ~ "Small autotrophic unconnected",
-           ecosystem_type == "Sh" ~ "Small heterotrophic unconnected",
-           ecosystem_type == "Ma" ~ "Medium autotrophic unconnected",
-           ecosystem_type == "Mh" ~ "Medium heterotrophic unconnected",
-           ecosystem_type == "La" ~ "Large autotrophic unconnected",
-           ecosystem_type == "Lh" ~ "Large heterotrophic unconnected",
-           ecosystem_type == "Sa (Sa_Lh)" ~ "Small autotrophic connected",
-           ecosystem_type == "Sh (Sh_La)" ~ "Small heterotrophic connected",
-           ecosystem_type == "Ma (Ma_Mh)" ~ "Medium autotrophic connected",
-           ecosystem_type == "Mh (Ma_Mh)" ~ "Medium heterotrophic connected",
-           ecosystem_type == "La (Sh_La)" ~ "Large autotrophic connected",
-           ecosystem_type == "Lh (Sa_Lh)" ~ "Large heterotrophic connected",
+           ecosystem_type == "Sa" ~ "small autotrophic unconnected",
+           ecosystem_type == "Sh" ~ "small heterotrophic unconnected",
+           ecosystem_type == "Ma" ~ "medium autotrophic unconnected",
+           ecosystem_type == "Mh" ~ "medium heterotrophic unconnected",
+           ecosystem_type == "La" ~ "large autotrophic unconnected",
+           ecosystem_type == "Lh" ~ "large heterotrophic unconnected",
+           ecosystem_type == "Sa (Sa_Lh)" ~ "small autotrophic connected",
+           ecosystem_type == "Sh (Sh_La)" ~ "small heterotrophic connected",
+           ecosystem_type == "Ma (Ma_Mh)" ~ "medium autotrophic connected",
+           ecosystem_type == "Mh (Ma_Mh)" ~ "medium heterotrophic connected",
+           ecosystem_type == "La (Sh_La)" ~ "large autotrophic connected",
+           ecosystem_type == "Lh (Sa_Lh)" ~ "large heterotrophic connected",
            TRUE ~ ecosystem_type), 
     ecosystem_type = factor(
            ecosystem_type,
-           levels = c("Small heterotrophic unconnected",
-                      "Small heterotrophic connected",
-                      "Small autotrophic unconnected",
-                      "Small autotrophic connected",
-                      "Medium heterotrophic unconnected",
-                      "Medium heterotrophic connected",
-                      "Medium autotrophic unconnected",
-                      "Medium autotrophic connected",
-                      "Large heterotrophic unconnected",
-                      "Large heterotrophic connected",
-                      "Large autotrophic unconnected",
-                      "Large autotrophic connected")), 
+           levels = c("small heterotrophic unconnected",
+                      "small heterotrophic connected",
+                      "small autotrophic unconnected",
+                      "small autotrophic connected",
+                      "medium heterotrophic unconnected",
+                      "medium heterotrophic connected",
+                      "medium autotrophic unconnected",
+                      "medium autotrophic connected",
+                      "large heterotrophic unconnected",
+                      "large heterotrophic connected",
+                      "large autotrophic unconnected",
+                      "large autotrophic connected")), 
     ecosystem_size = case_when(
-           ecosystem_size == "S" ~ "Small",
-           ecosystem_size == "M" ~ "Medium",
-           ecosystem_size == "L" ~ "Large",
+           ecosystem_size == "S" ~ "small",
+           ecosystem_size == "M" ~ "medium",
+           ecosystem_size == "L" ~ "large",
            TRUE ~ ecosystem_size),
     ecosystem_size_and_trophy = factor(
       x = paste(ecosystem_size, trophic_type),
-      levels = c("Small autotrophic",
-                 "Medium autotrophic",
-                 "Large autotrophic",
-                 "Small heterotrophic",
-                 "Medium heterotrophic",
-                 "Large heterotrophic")),
+      levels = c("small autotrophic",
+                 "medium autotrophic",
+                 "large autotrophic",
+                 "small heterotrophic",
+                 "medium heterotrophic",
+                 "large heterotrophic")),
     connection = factor(
       x = ifelse(metaecosystem == "yes",
                  "connected",
@@ -181,12 +181,12 @@ ecosystem_info = read.csv(here("..",
                  "connected")),
     metaecosystem = NULL,
     metaecosystem_type = case_when(
-           ecosystem_size_and_trophy == "Large heterotrophic" ~ "heterotrophic-dominated",
-           ecosystem_size_and_trophy == "Small autotrophic" ~ "heterotrophic-dominated",
-           ecosystem_size_and_trophy == "Large autotrophic" ~ "autotrophic-dominated",
-           ecosystem_size_and_trophy == "Small heterotrophic" ~ "autotrophic-dominated",
-           ecosystem_size_and_trophy == "Medium autotrophic" ~ "equally-dominated",
-           ecosystem_size_and_trophy == "Medium heterotrophic" ~ "equally-dominated",
+           ecosystem_size_and_trophy == "large heterotrophic" ~ "heterotrophic-dominated",
+           ecosystem_size_and_trophy == "small autotrophic" ~ "heterotrophic-dominated",
+           ecosystem_size_and_trophy == "large autotrophic" ~ "autotrophic-dominated",
+           ecosystem_size_and_trophy == "small heterotrophic" ~ "autotrophic-dominated",
+           ecosystem_size_and_trophy == "medium autotrophic" ~ "equally-dominated",
+           ecosystem_size_and_trophy == "medium heterotrophic" ~ "equally-dominated",
            TRUE ~ metaecosystem_type),
     metaecosystem_type = factor(metaecosystem_type,
                                 levels = c("autotrophic-dominated",
@@ -229,18 +229,18 @@ n_ecosystems = max(ecosystem_info$ecosystem_ID)
 
 # Define the treatments and controls
 
-treatments_and_controls = data.frame(treatment = c("Small autotrophic connected",
-                                                   "Small heterotrophic connected",
-                                                   "Medium autotrophic connected",
-                                                   "Medium heterotrophic connected",
-                                                   "Large autotrophic connected",
-                                                   "Large heterotrophic connected"),
-                                     control = c("Small autotrophic unconnected",
-                                                 "Small heterotrophic unconnected",
-                                                 "Medium autotrophic unconnected",
-                                                 "Medium heterotrophic unconnected",
-                                                 "Large autotrophic unconnected",
-                                                 "Large heterotrophic unconnected"))
+treatments_and_controls = data.frame(treatment = c("small autotrophic connected",
+                                                   "small heterotrophic connected",
+                                                   "medium autotrophic connected",
+                                                   "medium heterotrophic connected",
+                                                   "large autotrophic connected",
+                                                   "large heterotrophic connected"),
+                                     control = c("small autotrophic unconnected",
+                                                 "small heterotrophic unconnected",
+                                                 "medium autotrophic unconnected",
+                                                 "medium heterotrophic unconnected",
+                                                 "large autotrophic unconnected",
+                                                 "large heterotrophic unconnected"))
 
 n_treatments = length(unique(treatments_and_controls$treatment))
 n_controls = length(unique(treatments_and_controls$control))
@@ -311,25 +311,25 @@ treatment_colours = c("autotrophic-dominated" = "#5ab4ac",
                       "autotrophic-dominated unconnected" = "#6C3483",
                       "equally-dominated unconnected" = "black",
                       
-                      "Small heterotrophic" = "#c6dbef",
-                      "Medium heterotrophic" = "#3182bd",
-                      "Large heterotrophic" = "#08306b",
-                      "Small autotrophic" = "#c7e9c0",
-                      "Medium autotrophic" = "#2ca25f",
-                      "Large autotrophic" = "#00441b",
+                      "small heterotrophic" = "#c6dbef",
+                      "medium heterotrophic" = "#3182bd",
+                      "large heterotrophic" = "#08306b",
+                      "small autotrophic" = "#c7e9c0",
+                      "medium autotrophic" = "#2ca25f",
+                      "large autotrophic" = "#00441b",
                       
-                      "Small heterotrophic unconnected" = "#deebf7",
-                      "Small heterotrophic connected" = "#deebf7",
-                      "Medium heterotrophic unconnected" = "#9ecae1",
-                      "Medium heterotrophic connected" = "#9ecae1",
-                      "Large heterotrophic unconnected" = "#3182bd",
-                      "Large heterotrophic connected" = "#3182bd",
-                      "Small autotrophic unconnected" = "#ccece6",
-                      "Small autotrophic connected" = "#ccece6",
-                      "Medium autotrophic unconnected" = "#99d8c9",
-                      "Medium autotrophic connected" = "#99d8c9",
-                      "Large autotrophic unconnected" = "#2ca25f",
-                      "Large autotrophic connected" = "#2ca25f")
+                      "small heterotrophic unconnected" = "#deebf7",
+                      "small heterotrophic connected" = "#deebf7",
+                      "medium heterotrophic unconnected" = "#9ecae1",
+                      "medium heterotrophic connected" = "#9ecae1",
+                      "large heterotrophic unconnected" = "#3182bd",
+                      "large heterotrophic connected" = "#3182bd",
+                      "small autotrophic unconnected" = "#ccece6",
+                      "small autotrophic connected" = "#ccece6",
+                      "medium autotrophic unconnected" = "#99d8c9",
+                      "medium autotrophic connected" = "#99d8c9",
+                      "large autotrophic unconnected" = "#2ca25f",
+                      "large autotrophic connected" = "#2ca25f")
 
 # Set line types
 
@@ -429,37 +429,26 @@ grey_background_color = "transparent"
 size_x_axis = 16
 size_y_axis = 14
 
-axis_names = data.frame(variable = NA,
-                        axis_name = NA) %>%
-  
+axis_names = tibble(variable = character(), axis_name = character()) %>%
   add_row(variable = "day", axis_name = "Time (day)") %>%
   add_row(variable = "ecosystem_size_ml", axis_name = "Ecosystem Size (ml)") %>%
-  
-  add_row(variable = "total_metaecosystem_bioarea_mm2", axis_name = "Total Biomass (mm2)") %>%
-  
-  add_row(variable = "bioarea_mm2_per_ml", axis_name = "Biomass Density (mm2/ml)") %>%
+  add_row(variable = "total_metaecosystem_bioarea_mm2", axis_name = "Total Biomass (mm²)") %>%
+  add_row(variable = "bioarea_mm2_per_ml", axis_name = "Biomass Density (mm²/ml)") %>%
   add_row(variable = "bioarea_mm2_per_ml_d", axis_name = "Effect Size of Bioarea Density") %>%
-  
-  add_row(variable = "log10_bioarea_mm2_per_ml", axis_name = "Log10 Biomass (mm2/ml)") %>%
-  add_row(variable = "ln_bioarea_mm2_per_ml", axis_name = "Ln Biomass (mm2/ml)") %>%
-  add_row(variable = "sqrt_bioarea_mm2_per_ml", axis_name = "Sqrt Biomass (mm2/ml)") %>%
-  
+  add_row(variable = "log10_bioarea_mm2_per_ml", axis_name = "Log10 Biomass (mm²/ml)") %>%
+  add_row(variable = "ln_bioarea_mm2_per_ml", axis_name = "Ln Biomass (mm²/ml)") %>%
+  add_row(variable = "sqrt_bioarea_mm2_per_ml", axis_name = "Sqrt Biomass (mm²/ml)") %>%
   add_row(variable = "indiv_per_ml", axis_name = "Abundance (ind/ml)") %>%
   add_row(variable = "indiv_per_ml_d", axis_name = "Effect Size of Abundance") %>%
-  
   add_row(variable = "species_richness", axis_name = "Species Richness") %>%
   add_row(variable = "species_richness_d", axis_name = "Effect Size of Species Richness") %>%
-  
   add_row(variable = "shannon", axis_name = "Shannon Index") %>%
   add_row(variable = "shannon_d", axis_name = "Effect Size of Shannon Index") %>%
-  
   add_row(variable = "evenness_pielou", axis_name = "Evenness (Pielou's Index)") %>%
   add_row(variable = "evenness_pielou_d", axis_name = "Effect Size of Evenness") %>%
-  
-  add_row(variable = "median_body_size_µm2", axis_name = "Median Body Size (µm2)") %>%
+  add_row(variable = "median_body_size_µm2", axis_name = "Median Body Size (µm²)") %>%
   add_row(variable = "median_body_size_µm2_d", axis_name = "Effect Size of Median Body Size") %>%
-  
-  add_row(variable = "Ble_indiv_per_ml", axis_name = "Ble Density (ind/ml)") %>% 
+  add_row(variable = "Ble_indiv_per_ml", axis_name = "Ble Density (ind/ml)") %>%
   add_row(variable = "Cep_indiv_per_ml", axis_name = "Cep Density (ind/ml)") %>%
   add_row(variable = "Col_indiv_per_ml", axis_name = "Col Density (ind/ml)") %>%
   add_row(variable = "Eug_indiv_per_ml", axis_name = "Eug Density (ind/ml)") %>%
@@ -470,21 +459,7 @@ axis_names = data.frame(variable = NA,
   add_row(variable = "Spi_indiv_per_ml", axis_name = "Spi Density (ind/ml)") %>%
   add_row(variable = "Spi_te_indiv_per_ml", axis_name = "Spi te Density (ind/ml)") %>%
   add_row(variable = "Tet_indiv_per_ml", axis_name = "Tet Density (ind/ml)") %>%
-  
-  add_row(variable = "Ble_indiv_per_ml_d", axis_name = "Effect Size of Ble Density") %>%
-  add_row(variable = "Cep_indiv_per_ml_d", axis_name = "Effect Size of Cep Density") %>%
-  add_row(variable = "Col_indiv_per_ml_d", axis_name = "Effect Size of Col Density") %>%
-  add_row(variable = "Eug_indiv_per_ml_d", axis_name = "Effect Size of Eug Density") %>%
-  add_row(variable = "Eup_indiv_per_ml_d", axis_name = "Effect Size of Eup Density") %>%
-  add_row(variable = "Lox_indiv_per_ml_d", axis_name = "Effect Size of Lox Density") %>%
-  add_row(variable = "Pau_indiv_per_ml_d", axis_name = "Effect Size of Pau Density") %>%
-  add_row(variable = "Pca_indiv_per_ml_d", axis_name = "Effect Size of Pca Density") %>%
-  add_row(variable = "Spi_indiv_per_ml_d", axis_name = "Effect Size of Spi Density") %>%
-  add_row(variable = "Spi_te_indiv_per_ml_d", axis_name = "Effect Size of Spi te Density") %>%
-  add_row(variable = "Tet_indiv_per_ml_d", axis_name = "Effect Size of Tet Density") %>%
-  
   add_row(variable = "dominance", axis_name = "Dominance (%)") %>%
-  
   add_row(variable = "Ble_indiv_per_ml_dominance", axis_name = "Ble Dominance (%)") %>%
   add_row(variable = "Cep_indiv_per_ml_dominance", axis_name = "Cep Dominance (%)") %>%
   add_row(variable = "Col_indiv_per_ml_dominance", axis_name = "Col Dominance (%)") %>%
@@ -504,17 +479,15 @@ axis_names = data.frame(variable = NA,
   add_row(variable = "Lox_indiv_per_ml_dominance_d", axis_name = "Effect Size of Lox Dominance") %>%
   add_row(variable = "Pau_indiv_per_ml_dominance_d", axis_name = "Effect Size of Pau Dominance") %>%
   add_row(variable = "Pca_indiv_per_ml_dominance_d", axis_name = "Effect Size of Pca Dominance") %>%
-  add_row(variable = "Sp_indiv_per_mli_dominance_d", axis_name = "Effect Size of Spi Dominance") %>%
+  add_row(variable = "Spi_indiv_per_ml_dominance_d", axis_name = "Effect Size of Spi Dominance") %>%
   add_row(variable = "Spi_te_indiv_per_ml_dominance_d", axis_name = "Effect Size of Spi te Dominance") %>%
   add_row(variable = "Tet_indiv_per_ml_dominance_d", axis_name = "Effect Size of Tet Dominance") %>%
-  
-  add_row(variable = "log_size_class", axis_name = "Log Size (μm2)") %>%
+  add_row(variable = "log_size_class", axis_name = "Log Size (µm²)") %>%
   add_row(variable = "class_indiv_per_µl", axis_name = "Density (ind/ml)") %>%
-  
   add_row(variable = "median_body_area_µm2", axis_name = "Median Body Size (µm²)") %>%
-  add_row(variable = "median_body_area_µm2_d", axis_name = "Effect Size of Median Body Size") %>%
-  
-  slice(-1)
+  add_row(variable = "median_body_area_µm2_d", axis_name = "Effect Size of Median Body Size")
+
+
 ```
 
 ```{r modelling-parameters}

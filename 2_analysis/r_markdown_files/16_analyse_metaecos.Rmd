@@ -70,7 +70,7 @@ plot.metaecos.points(data_for_analysis,
 
 # --- DEFINE NR OF BOOTSTRAP ITERATIONS --- #
 
-bootstrap_iterations = 10
+bootstrap_iterations = 1000
 ```
 
 ```{r compute-stats-for-all-ecosystem-combinations, eval = recompute_metaeco_analysis}

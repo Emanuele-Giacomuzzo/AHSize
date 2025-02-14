@@ -41,7 +41,7 @@ plot.metaecos.points = function(data,
     # Axes & legend
     
     labs(x = axis_names$axis_name[axis_names$variable == "day"],
-         y = axis_names$axis_name[axis_names$variable == response_variable_selected],
+         y = axis_names$axis_name[axis_names$variable == response_variable_selected][[1]],
          color = "") +
     scale_x_continuous(breaks = unique(data$day)) +
     guides(color = guide_legend(order = 1,

@@ -20,7 +20,7 @@ pdf(file = here("..",
                 "paper", 
                 "metaecosystems_1.pdf"),
     width = paper_width_inches,
-    height = paper_height_inches)
+    height = paper_height_inches) 
 
 # Create plot
 

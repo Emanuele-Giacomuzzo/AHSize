@@ -1,6 +1,6 @@
 plot.ecosystems.points.ES = function(data,
                                      ecosystem_type_input,
-                                     response_variable) {
+                                     response_variable_selected) {
   
   data %>%
     
@@ -12,7 +12,7 @@ plot.ecosystems.points.ES = function(data,
     # Create plot
     
     ggplot(aes(x = day,
-               y = get(response_variable),
+               y = get(response_variable_selected),
                color = ecosystem_type,
                group = interaction(day, ecosystem_type))) +
     
@@ -21,8 +21,8 @@ plot.ecosystems.points.ES = function(data,
     geom_point(stat = "summary",
                fun = "mean",
                position = position_dodge(dodging)) +
-    geom_errorbar(aes(ymin = get(paste0(response_variable, "_lower")),
-                      ymax = get(paste0(response_variable, "_upper"))),
+    geom_errorbar(aes(ymin = get(paste0(response_variable_selected, "_lower")),
+                      ymax = get(paste0(response_variable_selected, "_upper"))),
                   width = 0.2,
                   position = position_dodge(dodging)) +
     
@@ -37,7 +37,7 @@ plot.ecosystems.points.ES = function(data,
     # Axes & legend
     
     labs(x = axis_names$axis_name[axis_names$variable == "day"],
-         y = axis_names$axis_name[axis_names$variable == response_variable],
+         y = axis_names$axis_name[axis_names$variable == response_variable_selected_selected][[1]],
          color = "") +
     scale_x_continuous(breaks = unique(data$day)) +
     guides(color = guide_legend(order = 1,

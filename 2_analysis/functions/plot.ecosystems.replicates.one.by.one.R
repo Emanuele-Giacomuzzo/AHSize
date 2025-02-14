@@ -29,7 +29,7 @@ plot.ecosystems.replicates.one.by.one = function(data,
       # Axes & legend
       
       labs(x = axis_names$axis_name[axis_names$variable == "day"],
-           y = axis_names$axis_name[axis_names$variable == response_variable_selected],
+           y = axis_names$axis_name[axis_names$variable == response_variable_selected][[1]],
            linetype = "") +
       scale_x_continuous(breaks = unique(data$day)) +
       guides(linetype = guide_legend(order = 2,

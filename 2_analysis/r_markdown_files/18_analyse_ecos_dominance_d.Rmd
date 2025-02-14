@@ -9,8 +9,8 @@ editor_options:
 ###### Small ecosystems
 
 ```{r class.source = 'fold-show'}
-print_dominance("Small heterotrophic unconnected")
-print_dominance("Small heterotrophic connected")
+print_dominance("small heterotrophic unconnected")
+print_dominance("small heterotrophic connected")
 ```
 
 ```{r warning=FALSE}
@@ -19,7 +19,7 @@ for(time_point_i in 2:4){
     print(paste("Time point ", time_point_i))
     
     p = ds_species_effect_sizes_d %>%
-      filter(ecosystem_type == "Small heterotrophic connected",
+      filter(ecosystem_type == "small heterotrophic connected",
              time_point == time_point_i,
              species != "Eug") %>%
       ggplot(aes(x = species,
@@ -41,8 +41,8 @@ for(time_point_i in 2:4){
 ###### Medium ecosystems
 
 ```{r class.source = 'fold-show'}
-print_dominance("Medium heterotrophic unconnected")
-print_dominance("Medium heterotrophic connected")
+print_dominance("medium heterotrophic unconnected")
+print_dominance("medium heterotrophic connected")
 ```
 
 ```{r warning=FALSE}
@@ -51,7 +51,7 @@ for(time_point_i in 2:4){
     print(paste("Time point ", time_point_i))
     
     p = ds_species_effect_sizes_d %>%
-      filter(ecosystem_type == "Medium heterotrophic connected",
+      filter(ecosystem_type == "medium heterotrophic connected",
              time_point == time_point_i,
              species != "Eug") %>%
       ggplot(aes(x = species,
@@ -72,8 +72,8 @@ for(time_point_i in 2:4){
 ###### Large ecosystems
 
 ```{r class.source = 'fold-show'}
-print_dominance("Large heterotrophic unconnected")
-print_dominance("Large heterotrophic connected")
+print_dominance("large heterotrophic unconnected")
+print_dominance("large heterotrophic connected")
 ```
 
 ```{r warning=FALSE}
@@ -82,7 +82,7 @@ for(time_point_i in 2:4){
     print(paste("Time point ", time_point_i))
     
     p = ds_species_effect_sizes_d %>%
-      filter(ecosystem_type == "Large heterotrophic connected",
+      filter(ecosystem_type == "large heterotrophic connected",
              time_point == time_point_i,
              species != "Eug") %>%
       ggplot(aes(x = species,

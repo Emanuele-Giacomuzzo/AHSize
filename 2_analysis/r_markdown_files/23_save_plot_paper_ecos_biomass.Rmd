@@ -13,12 +13,12 @@ editor_options:
 # Set parameters
 
 response_variable = "bioarea_mm2_per_ml"
-ecosystem_size_and_trophy_p_1 = c("Large autotrophic",
-                                  "Small heterotrophic")
-ecosystem_size_and_trophy_p_2 = c("Medium autotrophic",
-                                  "Medium heterotrophic")
-ecosystem_size_and_trophy_p_3 = c("Large heterotrophic",
-                                  "Small autotrophic")
+ecosystem_size_and_trophy_p_1 = c("large autotrophic",
+                                  "small heterotrophic")
+ecosystem_size_and_trophy_p_2 = c("medium autotrophic",
+                                  "medium heterotrophic")
+ecosystem_size_and_trophy_p_3 = c("large heterotrophic",
+                                  "small autotrophic")
 legend_row_n_input = 2
 y_min = 0
 y_max = 21

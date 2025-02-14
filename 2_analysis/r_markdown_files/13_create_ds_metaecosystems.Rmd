@@ -54,34 +54,34 @@ combinations_connected = ds_ecosystems %>%
 # Determine ecosystems IDs of unconnected autotrophic ecosystems
 
 ID_unconnected_S_autotrophic = ds_ecosystems %>%
-  filter(ecosystem_type == "Small autotrophic unconnected") %>%
+  filter(ecosystem_type == "small autotrophic unconnected") %>%
   pull(ecosystem_ID) %>%
   unique()
 
 ID_unconnected_M_autotrophic = ds_ecosystems %>%
-  filter(ecosystem_type == "Medium autotrophic unconnected") %>%
+  filter(ecosystem_type == "medium autotrophic unconnected") %>%
   pull(ecosystem_ID) %>%
   unique()
 
 ID_unconnected_L_autotrophic = ds_ecosystems %>%
-  filter(ecosystem_type == "Large autotrophic unconnected") %>%
+  filter(ecosystem_type == "large autotrophic unconnected") %>%
   pull(ecosystem_ID) %>%
   unique()
 
 # Determine ecosystems IDs of unconnected heterotrophic ecosystems
 
 ID_unconnected_S_heterotrophic = ds_ecosystems %>%
-  filter(ecosystem_type == "Small heterotrophic unconnected") %>%
+  filter(ecosystem_type == "small heterotrophic unconnected") %>%
   pull(ecosystem_ID) %>%
   unique()
 
 ID_unconnected_M_heterotrophic = ds_ecosystems %>%
-  filter(ecosystem_type == "Medium heterotrophic unconnected") %>%
+  filter(ecosystem_type == "medium heterotrophic unconnected") %>%
   pull(ecosystem_ID) %>%
   unique()
 
 ID_unconnected_L_heterotrophic = ds_ecosystems %>%
-  filter(ecosystem_type == "Large heterotrophic unconnected") %>%
+  filter(ecosystem_type == "large heterotrophic unconnected") %>%
   pull(ecosystem_ID) %>%
   unique()
 

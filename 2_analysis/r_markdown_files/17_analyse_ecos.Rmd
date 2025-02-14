@@ -57,9 +57,9 @@ data_for_analysis = data_for_analysis %>%
          !is.na(!!sym(response_variable_selected))) %>%
   mutate(ecosystem_ID = as.character(ecosystem_ID),
          size = NA,
-         size = case_when(ecosystem_size == "Small" ~ "S",
-                          ecosystem_size == "Medium" ~ "M",
-                          ecosystem_size == "Large" ~ "L",
+         size = case_when(ecosystem_size == "small" ~ "S",
+                          ecosystem_size == "medium" ~ "M",
+                          ecosystem_size == "large" ~ "L",
                           TRUE ~ size),
          size = factor(size, levels = c("S", "M", "L")),
          size = as.character(size))
@@ -205,9 +205,9 @@ S_connected = c(0, 0, 0, 0, 0, 1)
 
 n_of_digits = 3
 contrasts = contrast(emmeans_output, 
-         method = list("Small connection effect" = S_connected - S_unconnected,
-                       "Medium connection effect" = M_connected - M_unconnected,
-                       "Large connection effect" = L_connected - L_unconnected,
+         method = list("small connection effect" = S_connected - S_unconnected,
+                       "medium connection effect" = M_connected - M_unconnected,
+                       "large connection effect" = L_connected - L_unconnected,
                        "Size effect in unconnected (L - S)" = L_unconnected - S_unconnected,
                        "Size effect in unconnected (M - S)" = M_unconnected - S_unconnected,
                        "Size effect in connected (L - S)" = L_connected - S_connected,
@@ -240,9 +240,9 @@ contrasts = contrast(emmeans_output,
 
 n_of_digits = 3
 contrasts = contrast(emmeans_output, 
-         method = list("Small connection effect" = S_connected - S_unconnected,
-                       "Medium connection effect" = M_connected - M_unconnected,
-                       "Large connection effect" = L_connected - L_unconnected,
+         method = list("small connection effect" = S_connected - S_unconnected,
+                       "medium connection effect" = M_connected - M_unconnected,
+                       "large connection effect" = L_connected - L_unconnected,
                        "Size effect in unconnected (L - S)" = L_unconnected - S_unconnected,
                        "Size effect in unconnected (M - S)" = M_unconnected - S_unconnected,
                        "Size effect in connected (L - S)" = L_connected - S_connected,
