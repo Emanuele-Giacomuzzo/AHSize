@@ -1,6 +1,5 @@
 ---
 title: "AHSize"
-author: "Emanuele Giacomuzzo"
 date: "`r format(Sys.time(), '%Y-%m-%d %H:%M')`"
 output: 
   html_document:
