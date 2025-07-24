@@ -420,7 +420,7 @@ grey_background_xmin = -Inf
 grey_background_xmax = 11.5
 grey_background_ymin = -Inf
 grey_background_ymax = Inf
-grey_background_fill = "#f0f0f0"
+grey_background_fill = "#d1d1d1"
 grey_background_alpha = 0.03
 grey_background_color = "transparent"
 
