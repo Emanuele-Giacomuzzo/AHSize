@@ -73,7 +73,7 @@ plot.metaecos.points(data_for_analysis,
 bootstrap_iterations = 1000
 ```
 
-```{r compute-stats-for-all-ecosystem-combinations, eval = recompute_metaeco_analysis}
+```{r compute-the-stats-for-all-ecosystem-combinations, eval = recompute_metaeco_analysis}
 
 # --- COMPUTE STATS FOR ALL ECOSYSTEM COMBINATIONS --- #
 

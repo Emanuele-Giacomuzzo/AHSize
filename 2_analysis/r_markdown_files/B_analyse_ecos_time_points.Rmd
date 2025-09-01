@@ -1,0 +1,284 @@
+---
+title: "Ecosystem Analysis - Time Point by Time Point"
+output: html_document
+date: "2023-11-28"
+editor_options: 
+  chunk_output_type: console
+---
+
+<details  open = "open">
+<summary>Plot original data - means</summary>
+```{r}
+
+# --- PLOT ORIGINAL DATA WITH MEANS --- #
+
+plot = plot.ecosystems.points(ds_ecosystems %>% 
+                                filter(trophic_type == trophy_selected),
+                              response_variable_selected,
+                              legend_row_n_input = 3)
+plot
+```
+</details>
+
+<details>
+<summary>Plot original data - replicates</summary>
+```{r}
+
+# --- PLOT ORIGINAL DATA WITH SINGLE REPLICATES --- #
+
+plot.ecosystems.replicates.one.by.one(ds_ecosystems,
+                                      ecosystem_size_and_trophy_selected,
+                                      response_variable_selected)
+```
+</details>
+
+<details>
+<summary>Prepare data for analysis</summary>
+```{r}
+
+# --- PREPARE DATA FOR ANALYSIS --- #
+
+# Create dynamic baselines - each time point uses the previous time point as baseline
+baselines_tp = ds_ecosystems %>%
+  mutate(baseline_time_point = time_point + 1) %>%  # The baseline for time point 2 is time point 1, etc.
+  select(ecosystem_ID, baseline_time_point, all_of(response_variable_selected)) %>%
+  rename(baseline = all_of(response_variable_selected))
+
+data_for_analysis_tp = ds_ecosystems %>%
+  left_join(baselines_tp, by = c("ecosystem_ID", "time_point" = "baseline_time_point"))
+
+# Filter data - now each time point has its own baseline from the previous time point
+data_for_analysis_tp = data_for_analysis_tp %>%
+  filter(trophic_type == trophy_selected,
+         time_point %in% time_points_model,
+         !is.na(!!sym(response_variable_selected)),
+         !is.na(baseline)) %>%  # Remove rows where baseline is missing
+  mutate(ecosystem_ID = as.character(ecosystem_ID),
+         time_point = factor(time_point, levels = time_points_model),  # Convert to factor for categorical treatment
+         size = NA,
+         size = case_when(ecosystem_size == "small" ~ "S",
+                          ecosystem_size == "medium" ~ "M",
+                          ecosystem_size == "large" ~ "L",
+                          TRUE ~ size),
+         size = factor(size, levels = c("S", "M", "L")),
+         size = as.character(size))
+```
+</details>
+
+<details>
+<summary>Plot data for analysis - means</summary>
+```{r}
+
+# --- PLOT DATA FOR ANALYSIS WITH MEANS --- #
+
+plot.ecosystems.points(data_for_analysis_tp,
+                       response_variable_selected,
+                       legend_row_n_input = 3)
+```
+</details>
+
+<details>
+<summary>Plot data for analysis - replicates</summary>
+```{r}
+
+# --- PLOT DATA FOR ANALYSIS WITH SINGLE REPLICATES --- #
+
+plot.ecosystems.replicates.one.by.one(data_for_analysis_tp,
+                                      ecosystem_size_and_trophy_selected,
+                                      response_variable_selected)
+```
+</details>
+
+<details>
+<summary>Compute model results</summary>
+
+```{r}
+
+# --- DEFINE FORMULA FOR TIME POINT ANALYSIS --- #
+
+formula_tp = paste("get(response_variable_selected) ~",
+                   "size * connection * time_point +",
+                   "(1 | ecosystem_ID)") %>%
+  print()
+
+formula_tp = as.formula(formula_tp)
+```
+
+```{r eval = (distribution_selected == "gaussian"), echo = (distribution_selected == "gaussian")}
+
+# --- CREATE MODEL (WITH NORMAL DISTRIBUTION) --- #
+  
+model_tp = lmer(formula_tp,
+                data = data_for_analysis_tp,
+                REML = FALSE,
+                control = lmerControl(optimizer = "Nelder_Mead"))
+```
+
+```{r eval = (distribution_selected == "tweedie"), echo = (distribution_selected == "tweedie")}
+
+# --- CREATE MODEL (WITH TWEEDIE DISTRIBUTION) --- #
+
+if(trophy_selected == "heterotrophic" && response_variable_selected == "median_body_size_µm2"){
+  
+  model_tp <- glmmTMB(formula_tp,
+                      data = data_for_analysis_tp,
+                      family = glmmTMB::tweedie(link = "log"),
+                      control = glmmTMBControl(optimizer = optim, 
+                                               optArgs = list(method = "BFGS"))) 
+} else {
+  
+  model_tp <- glmmTMB::glmmTMB(formula_tp,
+                               data = data_for_analysis_tp,
+                               family = glmmTMB::tweedie(link = "log"))
+}
+```
+
+```{r}
+
+# --- PLOT RESIDUALS --- #
+
+qqnorm(resid(model_tp))
+qqline(resid(model_tp))
+
+create.res.vs.fit.ecosystems(model_tp,
+                             data_for_analysis_tp)
+```
+
+```{r}
+
+# --- SHOW MODEL SUMMARY --- #
+
+print(summary(model_tp), digits = 3)
+```
+
+```{r}
+
+# --- PERFORM ANOVA --- #
+
+ANOVA_tp = car::Anova(model_tp, type = "III") %>%
+  print()
+```
+
+```{r}
+
+# --- ESTIMATE MARGINAL MEANS FOR THREE-WAY INTERACTION --- #
+
+emmeans_output_tp = emmeans(model_tp,
+                            specs = pairwise ~ size:connection:time_point,
+                            adjust = "tukey",
+                            bias.adj = TRUE,
+                            lmer.df = "satterthwaite")
+```
+
+```{r class.source = 'fold-show'}
+
+# --- CODE THE CONTRAST LEVELS FOR 18 COMBINATIONS (3 sizes × 2 connections × 3 time points) --- #
+
+emmeans_output_tp
+
+# Order: L_unconnected_t2, M_unconnected_t2, S_unconnected_t2, L_connected_t2, M_connected_t2, S_connected_t2,
+#        L_unconnected_t3, M_unconnected_t3, S_unconnected_t3, L_connected_t3, M_connected_t3, S_connected_t3,
+#        L_unconnected_t4, M_unconnected_t4, S_unconnected_t4, L_connected_t4, M_connected_t4, S_connected_t4
+
+# Time point 2 contrasts (after resource flow on day 7)
+L_unconnected_t2 = c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+M_unconnected_t2 = c(0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+S_unconnected_t2 = c(0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+L_connected_t2 = c(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+M_connected_t2 = c(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+S_connected_t2 = c(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+# Time point 3 contrasts (after resource flow on day 14)
+L_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+M_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+S_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+L_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+M_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0)
+S_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0)
+
+# Time point 4 contrasts (after resource flow on day 21)
+L_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+M_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)
+S_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+L_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+M_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+S_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+```
+
+```{r}
+
+# --- CALCULATE CONTRASTS --- #
+
+n_of_digits = 3
+contrasts_tp = contrast(emmeans_output_tp, 
+         method = list(
+           # Connection effects at each time point
+           "small connection effect at time point 2" = S_connected_t2 - S_unconnected_t2,
+           "medium connection effect at time point 2" = M_connected_t2 - M_unconnected_t2,
+           "large connection effect at time point 2" = L_connected_t2 - L_unconnected_t2,
+           
+           "small connection effect at time point 3" = S_connected_t3 - S_unconnected_t3,
+           "medium connection effect at time point 3" = M_connected_t3 - M_unconnected_t3,
+           "large connection effect at time point 3" = L_connected_t3 - L_unconnected_t3,
+           
+           "small connection effect at time point 4" = S_connected_t4 - S_unconnected_t4,
+           "medium connection effect at time point 4" = M_connected_t4 - M_unconnected_t4,
+           "large connection effect at time point 4" = L_connected_t4 - L_unconnected_t4,
+           
+           # Cross-time point comparisons for connection effects
+           "small: connection effect t3 vs t2" = (S_connected_t3 - S_unconnected_t3) - (S_connected_t2 - S_unconnected_t2),
+           "medium: connection effect t3 vs t2" = (M_connected_t3 - M_unconnected_t3) - (M_connected_t2 - M_unconnected_t2),
+           "large: connection effect t3 vs t2" = (L_connected_t3 - L_unconnected_t3) - (L_connected_t2 - L_unconnected_t2),
+           
+           "small: connection effect t4 vs t3" = (S_connected_t4 - S_unconnected_t4) - (S_connected_t3 - S_unconnected_t3),
+           "medium: connection effect t4 vs t3" = (M_connected_t4 - M_unconnected_t4) - (M_connected_t3 - M_unconnected_t3),
+           "large: connection effect t4 vs t3" = (L_connected_t4 - L_unconnected_t4) - (L_connected_t3 - L_unconnected_t3),
+           
+           # Size effects within connection status at each time point
+           "unconnected: size effect (L - S) at time point 2" = L_unconnected_t2 - S_unconnected_t2,
+           "unconnected: size effect (M - S) at time point 2" = M_unconnected_t2 - S_unconnected_t2,
+           "connected: size effect (L - S) at time point 2" = L_connected_t2 - S_connected_t2,
+           "connected: size effect (M - S) at time point 2" = M_connected_t2 - S_connected_t2,
+           
+           "unconnected: size effect (L - S) at time point 3" = L_unconnected_t3 - S_unconnected_t3,
+           "unconnected: size effect (M - S) at time point 3" = M_unconnected_t3 - S_unconnected_t3,
+           "connected: size effect (L - S) at time point 3" = L_connected_t3 - S_connected_t3,
+           "connected: size effect (M - S) at time point 3" = M_connected_t3 - S_connected_t3,
+           
+           "unconnected: size effect (L - S) at time point 4" = L_unconnected_t4 - S_unconnected_t4,
+           "unconnected: size effect (M - S) at time point 4" = M_unconnected_t4 - S_unconnected_t4,
+           "connected: size effect (L - S) at time point 4" = L_connected_t4 - S_connected_t4,
+           "connected: size effect (M - S) at time point 4" = M_connected_t4 - S_connected_t4)) %>%
+  as.data.frame() %>%
+  mutate(p.value = round(p.value, digits = 3),
+         estimate = round(estimate, digits = 2),
+         SE = round(SE, digits = 2),
+         df = round(df, digits = 0),
+         z.ratio = round(z.ratio, digits = 2),  # Use z.ratio for glmmTMB
+         e = "",
+         e = ifelse(p.value > 0.1, 
+                           "",
+                           e),
+         e = ifelse(p.value < 0.05, 
+                           "*",
+                           e),
+         e = ifelse(p.value < 0.01, 
+                           "**",
+                           e),
+         e = ifelse(p.value < 0.001, 
+                           "***",
+                           e)) %>%
+  rename(" " = e)
+```
+</details>
+
+<details open = "open">
+<summary>Show results</summary>
+```{r}
+
+# --- SHOW RESULTS --- #
+
+ANOVA_tp
+contrasts_tp
+```
+</details>

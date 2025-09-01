@@ -93,6 +93,19 @@ editor_options:
 ```{r child = here("r_markdown_files", "16_analyse_metaecos.Rmd")}
 ```
 
+```{r echo=FALSE, message=FALSE}
+
+# --- SAVE ENVIRONMENT --- #
+
+save.image(file = here("..",
+                       "3_results", 
+                       "R_environments", 
+                       "R_environment_before_new_code.RData"))
+```
+
+```{r child = here("r_markdown_files", "A_analyse_metaecos_time_points.Rmd")}
+```
+
 ### Autotrophic ecosystems {.tabset .tabset-pills}
 
 ```{r}
@@ -107,6 +120,16 @@ distribution_selected = "tweedie"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
+```
+
+#### Biomass (time points) {.tabset .tabset-dropdown}
+
+```{r}
+response_variable_selected = "bioarea_mm2_per_ml"
+distribution_selected = "tweedie"
+```
+
+```{r child = here("r_markdown_files", "B_analyse_ecos_time_points.Rmd")}
 ```
 
 #### Median body size {.tabset .tabset-dropdown}
@@ -167,6 +190,16 @@ distribution_selected = "tweedie"
 ```
 
 ```{r child = here("r_markdown_files", "17_analyse_ecos.Rmd")}
+```
+
+#### Biomass (time points) {.tabset .tabset-dropdown}
+
+```{r}
+response_variable_selected = "bioarea_mm2_per_ml"
+distribution_selected = "tweedie"
+```
+
+```{r child = here("r_markdown_files", "B_analyse_ecos_time_points.Rmd")}
 ```
 
 #### Species richness {.tabset .tabset-dropdown}

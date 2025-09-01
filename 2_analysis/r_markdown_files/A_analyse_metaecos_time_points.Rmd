@@ -1,0 +1,622 @@
+---
+title: "Analyse meta-ecosystem biomass - Time Point by Time Point"
+output: html_document
+date: "2023-11-28"
+editor_options: 
+  chunk_output_type: console
+---
+
+#### Biomass (separate time points) {.tabset .tabset-pills}
+
+```{r}
+
+# --- DEFINE RESPONSE VARIABLE --- #
+
+response_variable_selected = "total_metaecosystem_bioarea_mm2"
+```
+
+<details  open = "open">
+<summary>Plot original data - means</summary>
+```{r}
+
+# --- PLOT ORIGINAL DATA --- #
+
+plot.metaecos.points(ds_metaecosystems,
+                     response_variable_selected,
+                     3)
+```
+</details>
+
+<details>
+<summary>Prepare data for analysis</summary>
+```{r}
+
+# --- PREPARE DATA FOR ANALYSIS --- #
+
+# Create dynamic baselines - each time point uses the previous time point as baseline
+baselines = ds_metaecosystems %>%
+  mutate(baseline_time_point = time_point + 1) %>%  # The baseline for time point 2 is time point 1, etc.
+  select(system_nr, baseline_time_point, all_of(response_variable_selected)) %>%
+  rename(baseline = all_of(response_variable_selected))
+
+data_for_analysis = ds_metaecosystems %>%
+  left_join(baselines, by = c("system_nr", "time_point" = "baseline_time_point"))
+
+# Filter - now each time point has its own baseline from the previous time point
+data_for_analysis = data_for_analysis %>%
+  filter(time_point %in% time_points_model,
+         !is.na(!!sym(response_variable_selected)),
+         !is.na(baseline)) %>%  # Remove rows where baseline is missing
+  mutate(time_point = factor(time_point, levels = time_points_model))  # Convert time_point to factor with explicit levels
+```
+</details>
+
+<details>
+<summary>Plot data for analysis - means</summary>
+```{r}
+
+# --- PLOT DATA FOR ANALYSIS --- #
+
+plot.metaecos.points(data_for_analysis,
+                     response_variable_selected,
+                     3)
+```
+</details>
+
+<details>
+<summary>Compute model results</summary>
+```{r}
+
+# --- DEFINE NR OF BOOTSTRAP ITERATIONS --- #
+
+bootstrap_iterations = 1000
+```
+
+```{r compute-stats-for-all-ecosystem-combinations, eval = recompute_metaeco_analysis}
+
+# --- COMPUTE STATS FOR ALL ECOSYSTEM COMBINATIONS --- #
+
+# If you see "Warning in (function (iprint = 0L, maxfun = 10000L, 
+# FtolAbs = 1e-05, FtolRel = ## 1e-15, : unused control arguments ignored", 
+# ignore it. It just means that you didn't pass the control argument to the 
+# Nelder_Mead optimiser, so it uses the default.
+
+# Initialise lists - with timepoint prefixes to avoid conflicts
+
+set_data_for_analysis_tp = list()
+coefficients_tp = list()
+full_model_tp = list()
+
+# Get the number of rows in the sets_of_sets data frame
+
+n_sets_of_sets = nrow(sets_of_sets)
+
+# Generate random sets of indices for bootstrap iterations
+
+random_nrs <- runif(bootstrap_iterations, 
+                              min = 1, 
+                              max = n_sets_of_sets) %>% round()
+
+# Set the optimizer inputs for model fitting
+
+optimizer_input = "optimx"
+method_input = "L-BFGS-B"
+
+# Loop through each randomly selected set of sets
+
+for (i in 1:length(random_nrs)) {
+
+  # Get the current set of sets based on the random index
+  
+  sets = sets_of_sets[random_nrs[i],]
+  
+  # Identify system numbers that are unconnected based on the metaecosystem type
+  
+  unconnected_system_nrs = unconnected_combinations_sets %>%
+    filter((metaeco_type_n_connection == "autotrophic-dominated unconnected" & 
+            set == sets$autotrophic_dominated_set_n) |
+           (metaeco_type_n_connection == "equally-dominated unconnected" & 
+            set == sets$equally_dominated_set_n) |
+           (metaeco_type_n_connection == "heterotrophic-dominated unconnected" & 
+            set == sets$heterotrophic_dominated_set_n)) %>%
+    pull(system_nr)  # Extract system numbers from the filtered data
+  
+  # Filter the data for analysis based on connection status and unconnected systems
+  
+  set_data_for_analysis_tp[[i]] = data_for_analysis %>%
+    filter(connection == "connected" | system_nr %in% unconnected_system_nrs)
+    # time_point is already converted to factor in data_for_analysis above
+  
+  # Fit a generalized linear mixed model with a Tweedie distribution
+  # NEW MODEL: Now includes three-way interaction with time_point
+  
+  full_model_tp[[i]] = glmmTMB::glmmTMB(get(response_variable_selected) ~
+                                            metaecosystem_type * connection * time_point +  
+                                            (1 | baseline),                         
+                                          data = set_data_for_analysis_tp[[i]], 
+                                          REML = FALSE,                        
+                                          family = glmmTMB::tweedie(link = "log"))
+  
+  # Extract and store the coefficients from the model summary
+  
+  coefficients_tp[[i]] = summary(full_model_tp[[i]])[["coefficients"]]
+}
+
+# Save the results - with timepoint suffixes to avoid conflicts with main analysis
+
+save(bootstrap_iterations,
+     file = here("..",
+                 "3_results", 
+                 "mixed_effect_models", 
+                 "time_points_analysis",
+                 "metaeco_timepoint_analysis_n_of_bootstrap_iterations.RData"))
+
+save(random_nrs,
+     file = here("..",
+                 "3_results", 
+                 "mixed_effect_models", 
+                 "time_points_analysis",
+                 "metaeco_timepoint_analysis_bootstrapped_sets_of_sets.RData"))
+
+save(coefficients_tp,
+     file = here("..",
+                 "3_results", 
+                 "mixed_effect_models", 
+                 "time_points_analysis",
+                 "metaeco_timepoint_analysis_bootstrapped_model_coefficients.RData"))
+```
+
+```{r}
+
+# --- LOAD RESULTS --- #
+
+load(file = here("..",
+                 "3_results", 
+                 "mixed_effect_models", 
+                 "time_points_analysis",
+                 "metaeco_timepoint_analysis_n_of_bootstrap_iterations.RData"))
+
+load(file = here("..",
+                 "3_results", 
+                 "mixed_effect_models", 
+                 "time_points_analysis",
+                 "metaeco_timepoint_analysis_bootstrapped_sets_of_sets.RData"))
+
+load(file = here("..",
+                 "3_results", 
+                 "mixed_effect_models", 
+                 "time_points_analysis",
+                 "metaeco_timepoint_analysis_bootstrapped_model_coefficients.RData"))
+```
+</details>
+
+<details>
+<summary>Show single combination results</summary>
+```{r}
+
+# --- SHOW MODEL RESIDUALS --- #
+
+create.res.vs.fit.metaecos(full_model[[1]],
+                           set_data_for_analysis[[1]])
+
+qqnorm(resid(full_model[[1]]))
+qqline(resid(full_model[[1]]))
+```
+
+```{r}
+
+# --- SHOW MODEL SUMMARY --- #
+
+print(summary(full_model_tp[[1]]), digits = 3)
+```
+
+```{r}
+
+# --- SHOW MODEL ANOVA --- #
+
+anova_output_tp = car::Anova(full_model_tp[[1]], type = "III")
+```
+
+```{r}
+
+# --- GET MODEL CONSTRASTS --- #
+
+emmeans_output = emmeans(full_model_tp[[1]],
+                         specs = pairwise ~ metaecosystem_type:connection:time_point,
+                         adjust = "tukey",
+                         bias.adj = TRUE,
+                         lmer.df = "satterthwaite")
+emmeans_output
+
+# Define contrast vectors for 18 combinations (3 metaeco types × 2 connections × 3 time points)
+# Order: AD_unconnected_t2, ED_unconnected_t2, HD_unconnected_t2, AD_connected_t2, ED_connected_t2, HD_connected_t2,
+#        AD_unconnected_t3, ED_unconnected_t3, HD_unconnected_t3, AD_connected_t3, ED_connected_t3, HD_connected_t3,
+#        AD_unconnected_t4, ED_unconnected_t4, HD_unconnected_t4, AD_connected_t4, ED_connected_t4, HD_connected_t4
+
+# Time point 2 contrasts (after resource flow on day 7)
+AD_unconnected_t2 = c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_unconnected_t2 = c(0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+HD_unconnected_t2 = c(0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+AD_connected_t2 = c(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_connected_t2 = c(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+HD_connected_t2 = c(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+# Time point 3 contrasts (after resource flow on day 14)
+AD_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+HD_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+AD_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0)
+HD_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0)
+
+# Time point 4 contrasts (after resource flow on day 21)
+AD_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+ED_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)
+HD_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+AD_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+ED_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+HD_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+
+# Compute the contrasts - CONNECTION EFFECTS AT EACH TIME POINT
+
+n_of_digits = 3
+contrasts = contrast(emmeans_output, 
+         method = list(
+           # Connection effects at each time point (main effects of interest)
+           "auto-dom connection effect at time point 2" = AD_connected_t2 - AD_unconnected_t2,
+           "equally-dom connection effect at time point 2" = ED_connected_t2 - ED_unconnected_t2,
+           "hetero-dom connection effect at time point 2" = HD_connected_t2 - HD_unconnected_t2,
+           
+           "auto-dom connection effect at time point 3" = AD_connected_t3 - AD_unconnected_t3,
+           "equally-dom connection effect at time point 3" = ED_connected_t3 - ED_unconnected_t3,
+           "hetero-dom connection effect at time point 3" = HD_connected_t3 - HD_unconnected_t3,
+           
+           "auto-dom connection effect at time point 4" = AD_connected_t4 - AD_unconnected_t4,
+           "equally-dom connection effect at time point 4" = ED_connected_t4 - ED_unconnected_t4,
+           "hetero-dom connection effect at time point 4" = HD_connected_t4 - HD_unconnected_t4,
+           
+           # Cross-time point comparisons for connection effects
+           "auto-dom: connection effect t3 vs t2" = (AD_connected_t3 - AD_unconnected_t3) - (AD_connected_t2 - AD_unconnected_t2),
+           "equally-dom: connection effect t3 vs t2" = (ED_connected_t3 - ED_unconnected_t3) - (ED_connected_t2 - ED_unconnected_t2),
+           "hetero-dom: connection effect t3 vs t2" = (HD_connected_t3 - HD_unconnected_t3) - (HD_connected_t2 - HD_unconnected_t2),
+           
+           "auto-dom: connection effect t4 vs t3" = (AD_connected_t4 - AD_unconnected_t4) - (AD_connected_t3 - AD_unconnected_t3),
+           "equally-dom: connection effect t4 vs t3" = (ED_connected_t4 - ED_unconnected_t4) - (ED_connected_t3 - ED_unconnected_t3),
+           "hetero-dom: connection effect t4 vs t3" = (HD_connected_t4 - HD_unconnected_t4) - (HD_connected_t3 - HD_unconnected_t3),
+           
+           # Metaecosystem type comparisons within connection status at each time point
+           "connected: auto- vs equally-dom at time point 2" = AD_connected_t2 - ED_connected_t2,
+           "connected: hetero- vs equally-dom at time point 2" = HD_connected_t2 - ED_connected_t2,
+           "unconnected: auto- vs equally-dom at time point 2" = AD_unconnected_t2 - ED_unconnected_t2,
+           "unconnected: hetero- vs equally-dom at time point 2" = HD_unconnected_t2 - ED_unconnected_t2,
+           
+           "connected: auto- vs equally-dom at time point 3" = AD_connected_t3 - ED_connected_t3,
+           "connected: hetero- vs equally-dom at time point 3" = HD_connected_t3 - ED_connected_t3,
+           "unconnected: auto- vs equally-dom at time point 3" = AD_unconnected_t3 - ED_unconnected_t3,
+           "unconnected: hetero- vs equally-dom at time point 3" = HD_unconnected_t3 - ED_unconnected_t3,
+           
+           "connected: auto- vs equally-dom at time point 4" = AD_connected_t4 - ED_connected_t4,
+           "connected: hetero- vs equally-dom at time point 4" = HD_connected_t4 - ED_connected_t4,
+           "unconnected: auto- vs equally-dom at time point 4" = AD_unconnected_t4 - ED_unconnected_t4,
+           "unconnected: hetero- vs equally-dom at time point 4" = HD_unconnected_t4 - ED_unconnected_t4)) %>%
+  as.data.frame() %>%
+  mutate(p.value = round(p.value, digits = n_of_digits),
+         estimate = round(estimate, digits = n_of_digits),
+         SE = round(SE, digits = n_of_digits),
+         df = round(df, digits = n_of_digits),
+         z.ratio = round(z.ratio, digits = n_of_digits),
+         e = "",
+         e = ifelse(p.value > 0.1, 
+                           "",
+                           e),
+         e = ifelse(p.value < 0.05, 
+                           "*",
+                           e),
+         e = ifelse(p.value < 0.01, 
+                           "**",
+                           e),
+         e = ifelse(p.value < 0.001, 
+                           "***",
+                           e)) %>%
+  rename(" " = e)
+```
+
+</details>
+
+<details>
+<summary>Show single combination results</summary>
+```{r}
+
+# --- SHOW MODEL RESIDUALS --- #
+
+create.res.vs.fit.metaecos(full_model[[1]],
+                           set_data_for_analysis[[1]])
+
+qqnorm(resid(full_model[[1]]))
+qqline(resid(full_model[[1]]))
+```
+
+```{r}
+
+# --- SHOW MODEL SUMMARY --- #
+
+print(summary(full_model[[1]]), digits = 3)
+```
+
+```{r}
+
+# --- SHOW MODEL ANOVA --- #
+
+anova_output = car::Anova(full_model[[1]], type = "III")
+```
+
+```{r}
+
+# --- GET MODEL CONSTRASTS FOR SINGLE COMBINATION --- #
+
+emmeans_output_tp = emmeans(full_model_tp[[1]],
+                         specs = pairwise ~ metaecosystem_type:connection:time_point,
+                         adjust = "tukey",
+                         bias.adj = TRUE,
+                         lmer.df = "satterthwaite")
+emmeans_output_tp
+
+# Define contrast vectors for 18 combinations (3 metaeco types × 2 connections × 3 time points)
+
+# Time point 2 contrasts
+AD_unconnected_t2 = c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_unconnected_t2 = c(0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+HD_unconnected_t2 = c(0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+AD_connected_t2 = c(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_connected_t2 = c(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+HD_connected_t2 = c(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+# Time point 3 contrasts
+AD_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+HD_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+AD_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+ED_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0)
+HD_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0)
+
+# Time point 4 contrasts
+AD_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+ED_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)
+HD_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+AD_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+ED_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+HD_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+
+# Compute the contrasts
+
+n_of_digits = 3
+contrasts_tp = contrast(emmeans_output_tp, 
+         method = list(
+           # Connection effects at each time point (main effects of interest)
+           "auto-dom connection effect at time point 2" = AD_connected_t2 - AD_unconnected_t2,
+           "equally-dom connection effect at time point 2" = ED_connected_t2 - ED_unconnected_t2,
+           "hetero-dom connection effect at time point 2" = HD_connected_t2 - HD_unconnected_t2,
+           
+           "auto-dom connection effect at time point 3" = AD_connected_t3 - AD_unconnected_t3,
+           "equally-dom connection effect at time point 3" = ED_connected_t3 - ED_unconnected_t3,
+           "hetero-dom connection effect at time point 3" = HD_connected_t3 - HD_unconnected_t3,
+           
+           "auto-dom connection effect at time point 4" = AD_connected_t4 - AD_unconnected_t4,
+           "equally-dom connection effect at time point 4" = ED_connected_t4 - ED_unconnected_t4,
+           "hetero-dom connection effect at time point 4" = HD_connected_t4 - HD_unconnected_t4,
+           
+           # Cross-time point comparisons for connection effects
+           "auto-dom: connection effect t3 vs t2" = (AD_connected_t3 - AD_unconnected_t3) - (AD_connected_t2 - AD_unconnected_t2),
+           "equally-dom: connection effect t3 vs t2" = (ED_connected_t3 - ED_unconnected_t3) - (ED_connected_t2 - ED_unconnected_t2),
+           "hetero-dom: connection effect t3 vs t2" = (HD_connected_t3 - HD_unconnected_t3) - (HD_connected_t2 - HD_unconnected_t2),
+           
+           "auto-dom: connection effect t4 vs t3" = (AD_connected_t4 - AD_unconnected_t4) - (AD_connected_t3 - AD_unconnected_t3),
+           "equally-dom: connection effect t4 vs t3" = (ED_connected_t4 - ED_unconnected_t4) - (ED_connected_t3 - ED_unconnected_t3),
+           "hetero-dom: connection effect t4 vs t3" = (HD_connected_t4 - HD_unconnected_t4) - (HD_connected_t3 - HD_unconnected_t3),
+           
+           # Metaecosystem type comparisons within connection status at each time point
+           "connected: auto- vs equally-dom at time point 2" = AD_connected_t2 - ED_connected_t2,
+           "connected: hetero- vs equally-dom at time point 2" = HD_connected_t2 - ED_connected_t2,
+           "unconnected: auto- vs equally-dom at time point 2" = AD_unconnected_t2 - ED_unconnected_t2,
+           "unconnected: hetero- vs equally-dom at time point 2" = HD_unconnected_t2 - ED_unconnected_t2,
+           
+           "connected: auto- vs equally-dom at time point 3" = AD_connected_t3 - ED_connected_t3,
+           "connected: hetero- vs equally-dom at time point 3" = HD_connected_t3 - ED_connected_t3,
+           "unconnected: auto- vs equally-dom at time point 3" = AD_unconnected_t3 - ED_unconnected_t3,
+           "unconnected: hetero- vs equally-dom at time point 3" = HD_unconnected_t3 - ED_unconnected_t3,
+           
+           "connected: auto- vs equally-dom at time point 4" = AD_connected_t4 - ED_connected_t4,
+           "connected: hetero- vs equally-dom at time point 4" = HD_connected_t4 - ED_connected_t4,
+           "unconnected: auto- vs equally-dom at time point 4" = AD_unconnected_t4 - ED_unconnected_t4,
+           "unconnected: hetero- vs equally-dom at time point 4" = HD_unconnected_t4 - ED_unconnected_t4)) %>%
+  as.data.frame() %>%
+  mutate(p.value = round(p.value, digits = n_of_digits),
+         estimate = round(estimate, digits = n_of_digits),
+         SE = round(SE, digits = n_of_digits),
+         df = round(df, digits = n_of_digits),
+         z.ratio = round(z.ratio, digits = n_of_digits),
+         e = "",
+         e = ifelse(p.value > 0.1, 
+                           "",
+                           e),
+         e = ifelse(p.value < 0.05, 
+                           "*",
+                           e),
+         e = ifelse(p.value < 0.01, 
+                           "**",
+                           e),
+         e = ifelse(p.value < 0.001, 
+                           "***",
+                           e)) %>%
+  rename(" " = e)
+```
+</details>
+
+<details  open = "open">
+<summary>Show single combination ANOVA & contrasts</summary>
+```{r}
+
+# --- SHOW MODEL RESULTS FOR A SINGLE COMBINATIONS --- #
+
+anova_output_tp
+contrasts_tp
+```
+</details>
+
+<details>
+<summary>Show all combinations results</summary>
+```{r}
+
+# --- SHOW WHICH RANDOM SETS OF SETS HAVE BOOTSTRAPPED --- #
+
+# Show to make sure that there's no bias in which ecosystem combinations have
+# been combined. 
+
+hist(random_nrs,
+     main = "Random sets of sets used for bootrapping")
+```
+
+```{r}
+
+# --- CALCULATE THE CONTRASTS FOR ALL ECOSYSTEM COMBINATIONS --- #
+
+# Initialise lists - with timepoint prefixes to avoid conflicts
+
+ANOVA_output_tp = list()
+emmeans_output_all_tp = list()
+contrasts_all_tp = list()
+
+# Loop through the sets of sets to calculate their contrasts
+
+for (i in 1:length(random_nrs)){
+  
+  # Perform ANOVA
+  
+  ANOVA_output_tp[[i]] = car::Anova(full_model_tp[[i]]) %>%
+    as.data.frame() %>%
+    mutate(variable = rownames(.))
+  
+  colnames(ANOVA_output_tp[[i]]) = c("Chisq",
+                                       "Df",
+                                       "p",
+                                       "variable")
+  
+  # Compute estimated marginal means (EMMeans) for the three-way interaction
+  
+  emmeans_output_all_tp[[i]] = emmeans(full_model_tp[[i]],
+                                     specs = pairwise ~ metaecosystem_type:connection:time_point,
+                                     adjust = "tukey",
+                                     bias.adj = TRUE,
+                                     lmer.df = "satterthwaite")
+  
+  # Define contrast vectors for 18 combinations
+  
+  # Time point 2 contrasts
+  AD_unconnected_t2 = c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  ED_unconnected_t2 = c(0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  HD_unconnected_t2 = c(0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  AD_connected_t2 = c(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  ED_connected_t2 = c(0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  HD_connected_t2 = c(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  
+  # Time point 3 contrasts
+  AD_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  ED_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  HD_unconnected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  AD_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+  ED_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0)
+  HD_connected_t3 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0)
+  
+  # Time point 4 contrasts
+  AD_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0)
+  ED_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)
+  HD_unconnected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
+  AD_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0)
+  ED_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0)
+  HD_connected_t4 = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)
+  
+  contrasts_all_tp[[i]] = contrast(emmeans_output_all_tp[[i]], 
+                       method = list(
+                         # Connection effects at each time point
+                         "auto-dom connection effect at time point 2" = AD_connected_t2 - AD_unconnected_t2,
+                         "equally-dom connection effect at time point 2" = ED_connected_t2 - ED_unconnected_t2,
+                         "hetero-dom connection effect at time point 2" = HD_connected_t2 - HD_unconnected_t2,
+                         
+                         "auto-dom connection effect at time point 3" = AD_connected_t3 - AD_unconnected_t3,
+                         "equally-dom connection effect at time point 3" = ED_connected_t3 - ED_unconnected_t3,
+                         "hetero-dom connection effect at time point 3" = HD_connected_t3 - HD_unconnected_t3,
+                         
+                         "auto-dom connection effect at time point 4" = AD_connected_t4 - AD_unconnected_t4,
+                         "equally-dom connection effect at time point 4" = ED_connected_t4 - ED_unconnected_t4,
+                         "hetero-dom connection effect at time point 4" = HD_connected_t4 - HD_unconnected_t4,
+                         
+                         # Cross-time point comparisons for connection effects
+                         "auto-dom: connection effect t3 vs t2" = (AD_connected_t3 - AD_unconnected_t3) - (AD_connected_t2 - AD_unconnected_t2),
+                         "equally-dom: connection effect t3 vs t2" = (ED_connected_t3 - ED_unconnected_t3) - (ED_connected_t2 - ED_unconnected_t2),
+                         "hetero-dom: connection effect t3 vs t2" = (HD_connected_t3 - HD_unconnected_t3) - (HD_connected_t2 - HD_unconnected_t2),
+                         
+                         "auto-dom: connection effect t4 vs t3" = (AD_connected_t4 - AD_unconnected_t4) - (AD_connected_t3 - AD_unconnected_t3),
+                         "equally-dom: connection effect t4 vs t3" = (ED_connected_t4 - ED_unconnected_t4) - (ED_connected_t3 - ED_unconnected_t3),
+                         "hetero-dom: connection effect t4 vs t3" = (HD_connected_t4 - HD_unconnected_t4) - (HD_connected_t3 - HD_unconnected_t3))) %>%
+    as.data.frame() 
+  
+  contrast_levels_tp = contrasts_all_tp[[i]]$contrast
+
+}
+
+# Average ANOVA across sets of sets - with timepoint prefix
+
+ANOVA_tp = do.call(rbind, ANOVA_output_tp) %>%
+  group_by(variable) %>%
+  summarise(Chisq = round(mean(Chisq), digits = 1),
+            Df = round(mean(Df), digits = 1),
+            p = round(mean(p), digits = 4)) %>%
+  mutate(variable = factor(variable,
+                           levels = c("metaecosystem_type",
+                                      "connection",
+                                      "time_point",
+                                      "metaecosystem_type:connection",
+                                      "metaecosystem_type:time_point",
+                                      "connection:time_point",
+                                      "metaecosystem_type:connection:time_point"))) %>%
+  arrange(variable)
+
+# Average the contrasts across sets of sets - with timepoint prefix
+
+contrasts_tp = do.call(rbind, contrasts_all_tp) %>%
+  group_by(contrast) %>%
+  summarise(estimate = round(mean(estimate), digits = 2),
+            SE = round(mean(SE), digits = 2),
+            df = round(mean(df), digits = 0),
+            z.ratio = round(mean(z.ratio), digits = 2),
+            p.value = round(mean(p.value), digits = 3)) %>%
+  mutate(contrast = factor(contrast,
+                           levels = c("auto-dom connection effect at time point 2",
+                                     "equally-dom connection effect at time point 2",
+                                     "hetero-dom connection effect at time point 2",
+                                     "auto-dom connection effect at time point 3",
+                                     "equally-dom connection effect at time point 3",
+                                     "hetero-dom connection effect at time point 3",
+                                     "auto-dom connection effect at time point 4",
+                                     "equally-dom connection effect at time point 4",
+                                     "hetero-dom connection effect at time point 4",
+                                     "auto-dom: connection effect t3 vs t2",
+                                     "equally-dom: connection effect t3 vs t2",
+                                     "hetero-dom: connection effect t3 vs t2",
+                                     "auto-dom: connection effect t4 vs t3",
+                                     "equally-dom: connection effect t4 vs t3",
+                                     "hetero-dom: connection effect t4 vs t3"))) %>%
+  arrange(contrast)
+```
+</details>
+
+<details>
+<summary>Show all combinations ANOVA & contrasts</summary>
+```{r}
+
+# --- SHOW MODEL RESULTS FOR ALL COMBINATIONS --- #
+
+ANOVA_tp
+contrasts_tp
+```
+</details>
